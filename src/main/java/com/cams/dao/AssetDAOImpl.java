@@ -30,15 +30,20 @@ public class AssetDAOImpl implements AssetDAO {
 
     @Override
     public Optional<Asset> findById(String assetId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            return findById(conn, assetId);
+        }
+    }
+
+    @Override
+    public Optional<Asset> findById(Connection conn, String assetId) throws SQLException {
         if (assetId == null || assetId.trim().isEmpty()) {
             return Optional.empty();
         }
 
         String sql = "SELECT " + SELECT_COLUMNS + " FROM ASSETS WHERE ASSET_ID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, assetId.trim());
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -52,14 +57,19 @@ public class AssetDAOImpl implements AssetDAO {
 
     @Override
     public boolean create(Asset asset) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            return create(conn, asset);
+        }
+    }
+
+    @Override
+    public boolean create(Connection conn, Asset asset) throws SQLException {
         String sql = "INSERT INTO ASSETS (" +
                 "ASSET_ID, ASSET_NAME, CATEGORY, DEPARTMENT, PURCHASE_DATE, PURCHASE_COST, " +
                 "VENDOR_ID, WARRANTY_EXPIRY, STATUS, LOCATION, CREATED_AT, UPDATED_AT" +
                 ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, asset.getAssetId().trim());
             ps.setString(2, asset.getAssetName().trim());
             ps.setString(3, asset.getCategory().trim());
@@ -77,6 +87,13 @@ public class AssetDAOImpl implements AssetDAO {
 
     @Override
     public boolean update(Asset asset) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            return update(conn, asset);
+        }
+    }
+
+    @Override
+    public boolean update(Connection conn, Asset asset) throws SQLException {
         // ASSET_ID and STATUS are immutable via standard update
         String sql = "UPDATE ASSETS SET " +
                 "ASSET_NAME = ?, CATEGORY = ?, DEPARTMENT = ?, PURCHASE_DATE = ?, " +
@@ -84,9 +101,7 @@ public class AssetDAOImpl implements AssetDAO {
                 "UPDATED_AT = CURRENT_TIMESTAMP " +
                 "WHERE ASSET_ID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, asset.getAssetName().trim());
             ps.setString(2, asset.getCategory().trim());
             ps.setString(3, asset.getDepartment().trim());

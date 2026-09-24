@@ -26,6 +26,7 @@ public class Asset implements Serializable {
     private String disposalReason;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private Object details;
 
     public Asset() {
     }
@@ -155,6 +156,14 @@ public class Asset implements Serializable {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Object getDetails() {
+        return details;
+    }
+
+    public void setDetails(Object details) {
+        this.details = details;
     }
 
     @Override

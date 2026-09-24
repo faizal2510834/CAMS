@@ -60,7 +60,7 @@ CAMS strictly enforces a clean multi-tier architectural pipeline without externa
   - [`/pages/technical/dashboard.html`](src/main/webapp/pages/technical/dashboard.html): Technical Maintenance Workspace.
   - [`/pages/access-denied.html`](src/main/webapp/pages/access-denied.html): 403 Forbidden intercept view.
 
-### ✅ Module 2: Asset Management
+### ✅ Module 2A: Asset Management Core Registry
 - **Schema & DDL**: Self-contained script in [`db/module2_assets.sql`](db/module2_assets.sql). Zero runtime DDL executed on server startup.
 - **Single Status Model**: `STATUS` column strictly bounded to `AVAILABLE`, `ISSUED`, `UNDER_MAINTENANCE`, `DISPOSED`.
 - **Soft-Delete / Retirement**: Triggering "Retire" transitions status to `DISPOSED` and records `DISPOSED_DATE` and `DISPOSAL_REASON`. Hard `DELETE FROM ASSETS` is completely prohibited.
@@ -78,13 +78,41 @@ CAMS strictly enforces a clean multi-tier architectural pipeline without externa
   - Retiring an `ISSUED` or already-`DISPOSED` asset returns HTTP 409 Conflict.
   - Editing a `DISPOSED` asset returns HTTP 409 Conflict.
   - `asset_id` and `status` are immutable via PUT update.
-  - `changeStatus(Connection con, String assetId, String expectedStatus, String newStatus)` provides optimistic concurrency locking for future transaction modules.
+  - `changeStatus(Connection con, String assetId, String expectedStatus, String newStatus)` provides optimistic concurrency locking.
 - **Pagination & Whitelisted Sorting**:
   - `GET /api/assets?page=1&size=10` uses Oracle `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`.
   - Dynamic filtering by keyword, department, category, operational status, and retired inclusion toggle.
-  - Whitelisted sort columns prevent SQL injection.
-- **UI Screen**:
-  - [`/pages/assets.html`](src/main/webapp/pages/assets.html) with role-adaptive interface (mutating controls visible only to Administrator; read-only view for Faculty and Technical Staff).
+
+### ✅ Module 2B: Category-Specific Asset Details & Atomic Transactions
+- **Schema & DDL**: Dedicated 1:1 foreign-keyed detail tables in [`db/module2b_details.sql`](db/module2b_details.sql):
+  - `COMPUTER_DETAILS`: `CPU`, `MONITOR`, `KEYBOARD`, `MOUSE`, `PRINTER`, `SOFTWARE`, `IP_ADDRESS`.
+  - `CLASSROOM_DETAILS`: `FURNITURE_DESC`, `PROJECTOR`, `SMART_BOARD`, `AC`, `SEATING_CAPACITY`.
+  - `LAB_DETAILS`: `EQUIPMENT_TYPE`, `EQUIPMENT_CONDITION`, `LAST_CALIBRATION_DATE`.
+  - `FURNITURE_DETAILS`: `FURNITURE_TYPE`, `MATERIAL`, `QUANTITY`.
+  - Keyed 1:1 on `ASSET_ID` referencing `ASSETS(ASSET_ID) ON DELETE CASCADE`. Existing `ASSETS` table structure is untouched.
+- **Transactional DAO Refactoring**:
+  - `AssetDAO`, `ComputerDetailsDAO`, `ClassroomDetailsDAO`, `LabDetailsDAO`, and `FurnitureDetailsDAO` accept external `Connection` arguments.
+  - `insertOrUpdate(Connection conn, String assetId, T details)` and `findByAssetId(Connection conn, String assetId)`.
+- **Atomic Transaction Service Layer**:
+  - `AssetService.createAsset()` and `updateAsset()` manage explicit transactions (`setAutoCommit(false)`, persist asset, persist matching detail row, `commit()`).
+  - Exceptions trigger `rollback()` leaving **zero orphaned asset records** in the database.
+- **Strict Payload Shape & Field Validations**:
+  - Details payload shape must strictly match declared category; mismatch rejected with HTTP 400.
+  - `ip_address` validated as IPv4 format if present.
+  - `seating_capacity` and `quantity` must be positive integers ($> 0$).
+  - `last_calibration_date` parsed as valid SQL date.
+  - Category `Other` skips detail tables entirely (`details: null`).
+- **Endpoints**:
+  - `POST /api/assets` & `PUT /api/assets/{id}` accept optional nested `details` object.
+  - `GET /api/assets/{id}` returns nested `details` (or `null` if none recorded).
+  - `GET /api/assets` (list) remains fast without detail joins.
+- **Dynamic Frontend UI**:
+  - In [`/pages/assets.html`](src/main/webapp/pages/assets.html) & [`/js/assets.js`](src/main/webapp/js/assets.js), changing Category dynamically reveals matching detail specification inputs.
+  - View Details modal renders full category specifications read-only.
+- **Backward Compatibility**:
+  - Pre-Module-2B assets return `details: null` cleanly without error.
+- **Automated Verification**:
+  - Complete 9-point test suite in [`test_module2b.ps1`](test_module2b.ps1).
 
 ---
 

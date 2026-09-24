@@ -15,6 +15,21 @@ import java.util.Optional;
 public interface AssetDAO {
 
     /**
+     * Finds an asset by its primary key ID using the provided Connection.
+     */
+    Optional<Asset> findById(Connection conn, String assetId) throws SQLException;
+
+    /**
+     * Persists a new asset record in the ASSETS table using the provided Connection.
+     */
+    boolean create(Connection conn, Asset asset) throws SQLException;
+
+    /**
+     * Updates an asset's editable fields using the provided Connection.
+     */
+    boolean update(Connection conn, Asset asset) throws SQLException;
+
+    /**
      * Finds an asset by its primary key ID.
      */
     Optional<Asset> findById(String assetId) throws SQLException;

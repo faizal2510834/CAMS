@@ -272,6 +272,16 @@ public class AssetServlet extends HttpServlet {
                 asset.setLocation(json.get("location").getAsString().trim());
             }
 
+            if (json.has("details")) {
+                if (json.get("details").isJsonNull()) {
+                    asset.setDetails(null);
+                } else if (json.get("details").isJsonObject()) {
+                    asset.setDetails(json.getAsJsonObject("details"));
+                } else {
+                    throw new AssetValidationException("Details must be a JSON object");
+                }
+            }
+
             return asset;
         } catch (AssetValidationException e) {
             throw e;

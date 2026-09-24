@@ -25,10 +25,15 @@ public interface AssetService {
     PagedResult<Asset> getAssets(AssetQueryCriteria criteria) throws SQLException;
 
     /**
-     * Registers a new asset in the system.
+     * Registers a new asset in the system (alias for createAsset).
      * Enforces ID format, cost > 0, duplicate checks, warranty >= purchase date, and dropdown validations.
      */
     Asset addAsset(Asset asset) throws AssetValidationException, AssetConflictException, SQLException;
+
+    /**
+     * Creates a new asset and its category-specific details in a managed transaction.
+     */
+    Asset createAsset(Asset asset) throws AssetValidationException, AssetConflictException, SQLException;
 
     /**
      * Updates an asset's editable fields.
