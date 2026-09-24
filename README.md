@@ -185,7 +185,52 @@ The server will start on **`http://localhost:8080`**.
 Run the automated end-to-end PowerShell verification suites:
 ```powershell
 powershell -ExecutionPolicy Bypass -File test_module2.ps1
+powershell -ExecutionPolicy Bypass -File test_module2b.ps1
+powershell -ExecutionPolicy Bypass -File test_module3.ps1
 ```
+
+---
+
+## 🏢 Module 3: Vendor & Purchase Management
+
+Module 3 adds complete supplier lifecycle and procurement management with atomic transactional approvals:
+
+### 1. Database Schema & Migration (`db/module3_vendor_purchase.sql`)
+- **`VENDORS` Table**: `vendor_id` (PK), `vendor_name`, `contact`, `email`, `address`, `active` ('Y'/'N'), `created_at`, `updated_at`.
+- **`PURCHASES` Table**: `purchase_id` (PK), `asset_id` (UNIQUE FK referencing `ASSETS`), `vendor_id` (FK referencing `VENDORS`), `invoice_number`, `purchase_date`, `cost` (> 0), `status` ('PENDING','APPROVED','REJECTED'), `approved_by`, `approved_at`, `created_at`.
+- **Migration**: Nulls out legacy free-text `ASSETS.VENDOR_ID` values and adds FK constraint `fk_assets_vendor` referencing `VENDORS(VENDOR_ID)`.
+
+### 2. Business Rules & Atomic Transactions
+- **Vendor Validation**: Name required; proper email format validation; numeric-ish contact validation; soft deactivation (`active = 'N'`) preventing new purchases while preserving audit history.
+- **Purchase Constraints**:
+  - `asset_id` must reference an existing asset with no prior purchase (1:1 relationship, clean 409 Conflict).
+  - `vendor_id` must reference an active vendor (400 if inactive).
+  - `cost > 0` and `purchase_date` cannot be in the future (400 Bad Request).
+  - New purchases start as `PENDING`.
+- **Atomic Approval (`PUT /api/purchases/{id}/approve`)**:
+  - Managed inside a single database transaction (`setAutoCommit(false)`):
+    1. Sets purchase status to `APPROVED`, sets `approved_by` to session user and `approved_at` to current timestamp.
+    2. Atomically sets `ASSETS.VENDOR_ID` on the linked asset to the purchase's `vendor_id` and refreshes `ASSETS.UPDATED_AT`.
+    3. Both writes commit together or rollback together.
+- **Rejection (`PUT /api/purchases/{id}/reject`)**:
+  - Sets purchase status to `REJECTED` with optional reason; asset's vendor remains untouched.
+  - Approving or rejecting an already-approved or already-rejected purchase returns 409 Conflict.
+- **Role-Based Access Control**:
+  - All `/api/vendors/*` and `/api/purchases/*` endpoints are Administrator-only. Faculty and Technical Staff receive HTTP 403 Forbidden.
+
+### 3. REST API Endpoints
+| Method | Endpoint | Allowed Roles | Description |
+|---|---|---|---|
+| `GET` | `/api/vendors?search=&active=&page=&size=` | Administrator | List vendors with search & status filter |
+| `GET` | `/api/vendors/{id}` | Administrator | Get vendor by ID |
+| `POST` | `/api/vendors` | Administrator | Register new supplier |
+| `PUT` | `/api/vendors/{id}` | Administrator | Update vendor details |
+| `PUT` | `/api/vendors/{id}/deactivate` | Administrator | Deactivate vendor (sets `active='N'`) |
+| `GET` | `/api/purchases?status=&vendorId=&page=&size=` | Administrator | List purchases with status & vendor filter |
+| `GET` | `/api/purchases/{id}` | Administrator | Get procurement order details |
+| `POST` | `/api/purchases` | Administrator | Record procurement against unpurchased asset |
+| `PUT` | `/api/purchases/{id}/approve` | Administrator | Atomically approve purchase & link vendor to asset |
+| `PUT` | `/api/purchases/{id}/reject` | Administrator | Reject purchase order |
 
 ---
 
@@ -193,13 +238,16 @@ powershell -ExecutionPolicy Bypass -File test_module2.ps1
 
 ```
 CAMS/
-├── .gitignore
 ├── pom.xml
 ├── README.md
 ├── run.bat / run.ps1
 ├── test_module2.ps1
+├── test_module2b.ps1
+├── test_module3.ps1
 ├── db/
-│   └── module2_assets.sql
+│   ├── module2_assets.sql
+│   ├── module2b_details.sql
+│   └── module3_vendor_purchase.sql
 └── src/main/
     ├── java/com/cams/
     │   ├── Server.java
@@ -207,24 +255,40 @@ CAMS/
     │   │   ├── AssetServlet.java
     │   │   ├── AuthServlet.java
     │   │   ├── PingServlet.java
-    │   │   └── RoleTestServlet.java
+    │   │   ├── PurchaseServlet.java
+    │   │   ├── RoleTestServlet.java
+    │   │   └── VendorServlet.java
     │   ├── dao/
     │   │   ├── AssetDAO.java / AssetDAOImpl.java
+    │   │   ├── ClassroomDetailsDAO.java / ClassroomDetailsDAOImpl.java
+    │   │   ├── ComputerDetailsDAO.java / ComputerDetailsDAOImpl.java
+    │   │   ├── FurnitureDetailsDAO.java / FurnitureDetailsDAOImpl.java
+    │   │   ├── LabDetailsDAO.java / LabDetailsDAOImpl.java
     │   │   ├── PingDAO.java / PingDAOImpl.java
-    │   │   └── UserDAO.java / UserDAOImpl.java
+    │   │   ├── PurchaseDAO.java / PurchaseDAOImpl.java
+    │   │   ├── UserDAO.java / UserDAOImpl.java
+    │   │   └── VendorDAO.java / VendorDAOImpl.java
     │   ├── filter/
     │   │   ├── AuthenticationFilter.java
     │   │   └── AuthorizationFilter.java
     │   ├── model/
     │   │   ├── Asset.java
     │   │   ├── AssetQueryCriteria.java
+    │   │   ├── ClassroomDetails.java
+    │   │   ├── ComputerDetails.java
+    │   │   ├── FurnitureDetails.java
+    │   │   ├── LabDetails.java
     │   │   ├── PagedResult.java
     │   │   ├── PingResult.java
-    │   │   └── User.java
+    │   │   ├── Purchase.java
+    │   │   ├── User.java
+    │   │   └── Vendor.java
     │   ├── service/
     │   │   ├── AssetService.java / AssetServiceImpl.java
     │   │   ├── AuthService.java / AuthServiceImpl.java
-    │   │   └── PingService.java
+    │   │   ├── PingService.java
+    │   │   ├── PurchaseService.java / PurchaseServiceImpl.java
+    │   │   └── VendorService.java / VendorServiceImpl.java
     │   └── util/
     │       ├── AssetConstants.java
     │       ├── DBConnection.java
@@ -238,12 +302,19 @@ CAMS/
         ├── css/style.css
         ├── js/
         │   ├── app.js
-        │   └── assets.js
+        │   ├── assets.js
+        │   ├── purchases.js
+        │   └── vendors.js
         ├── pages/
         │   ├── access-denied.html
         │   ├── assets.html
         │   ├── login.html
-        │   ├── admin/dashboard.html
+        │   ├── purchases.html (redirect to admin/purchases.html)
+        │   ├── vendors.html (redirect to admin/vendors.html)
+        │   ├── admin/
+        │   │   ├── dashboard.html
+        │   │   ├── purchases.html
+        │   │   └── vendors.html
         │   ├── faculty/dashboard.html
         │   └── technical/dashboard.html
         └── WEB-INF/web.xml

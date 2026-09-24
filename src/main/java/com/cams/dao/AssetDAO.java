@@ -61,6 +61,11 @@ public interface AssetDAO {
     int changeStatus(Connection con, String assetId, String expectedStatus, String newStatus) throws SQLException;
 
     /**
+     * Updates an asset's vendor reference in the ASSETS table using the provided Connection.
+     */
+    boolean updateVendorId(Connection conn, String assetId, String vendorId) throws SQLException;
+
+    /**
      * Executes a dynamic, parameterized search with pagination and whitelisted sorting.
      */
     PagedResult<Asset> search(AssetQueryCriteria criteria) throws SQLException;

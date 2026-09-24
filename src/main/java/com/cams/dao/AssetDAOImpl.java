@@ -229,6 +229,16 @@ public class AssetDAOImpl implements AssetDAO {
         return new PagedResult<>(assets, criteria.getPage(), criteria.getSize(), totalItems);
     }
 
+    @Override
+    public boolean updateVendorId(Connection conn, String assetId, String vendorId) throws SQLException {
+        String sql = "UPDATE ASSETS SET VENDOR_ID = ?, UPDATED_AT = CURRENT_TIMESTAMP WHERE ASSET_ID = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, vendorId);
+            ps.setString(2, assetId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     private Asset mapRowToAsset(ResultSet rs) throws SQLException {
         Asset asset = new Asset();
         asset.setAssetId(rs.getString("ASSET_ID"));

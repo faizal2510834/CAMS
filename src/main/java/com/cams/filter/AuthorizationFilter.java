@@ -84,6 +84,12 @@ public class AuthorizationFilter implements Filter {
         if (path.startsWith("/pages/admin/") || path.startsWith("/api/admin/")) {
             return "Administrator";
         }
+        if (path.startsWith("/api/vendors") || path.startsWith("/api/purchases")) {
+            return "Administrator";
+        }
+        if (path.startsWith("/pages/vendors") || path.startsWith("/pages/purchases")) {
+            return "Administrator";
+        }
         if (path.startsWith("/pages/faculty/") || path.startsWith("/api/faculty/")) {
             return "Faculty";
         }
