@@ -234,6 +234,42 @@ Module 3 adds complete supplier lifecycle and procurement management with atomic
 
 ---
 
+### ✅ Module 4: Master Data Management (Departments, Locations, Categories)
+- **Lookup Normalization**:
+  - `DEPARTMENTS`: `department_id` (PK, natural code e.g. `'CSE'`), `department_name`, `active` ('Y'/'N').
+  - `LOCATIONS`: `location_id` (PK, natural code/name e.g. `'CSE Lab 1'`), `location_name`, `building`, `floor_number`, `active`.
+  - `CATEGORIES`: `category_id` (PK, natural code/name e.g. `'Computer'`), `category_name`, `description`, `active`.
+  - Note: Natural-key primary keys were selected for direct non-destructive migration against existing `ASSETS` columns. Renaming a code later would require cascading updates.
+- **Non-Destructive Migration**:
+  - [`db/module4_master_data.sql`](db/module4_master_data.sql) extracted existing distinct values from `ASSETS`, populated lookup tables, and attached foreign keys `fk_assets_department`, `fk_assets_location`, `fk_assets_category` without any data loss.
+- **Dynamic Asset Validation**:
+  - `AssetServiceImpl` queries `MasterDataService` to ensure newly registered or edited assets only reference active departments, locations, and categories.
+  - `/api/assets/options` dynamically aggregates active entries directly from master lookup tables.
+- **Administrator CRUD Endpoints**:
+  - `/api/departments`, `/api/locations`, `/api/categories` with POST (create), PUT (update), PUT `/deactivate` (soft-deactivate).
+
+---
+
+### ✅ Module 5: Equipment Issue & Return Management
+- **Schema & DDL**:
+  - [`db/module5_issue_return.sql`](db/module5_issue_return.sql): `ASSET_ISSUES` tracking `issue_id` (PK), `asset_id` (FK to `ASSETS`), `issued_to_user_id` (FK to `USERS`), `issued_to_department` (FK to `DEPARTMENTS`), `issue_date`, `expected_return_date`, `actual_return_date`, `status` ('ISSUED', 'RETURNED'), `condition_on_issue`, `condition_on_return`, `remarks`, `return_remarks`, `issued_by`, `returned_to`.
+- **Department Source Decoupling**:
+  - `USERS.DEPARTMENT` stores descriptive text and is not altered. Issue forms provide a dropdown populated from `DEPARTMENTS`, and the backend strictly validates foreign key membership.
+- **Atomic Concurrency Protection**:
+  - **Issue Race**: `assetDAO.changeStatus(con, assetId, "AVAILABLE", "ISSUED")` checks affected rows == 1. In simultaneous race conditions, exactly 1 request succeeds and the other receives a clean HTTP 409 Conflict.
+  - **Return Race**: `UPDATE asset_issues SET actual_return_date = ? ... WHERE issue_id = ? AND actual_return_date IS NULL AND status = 'ISSUED'` checks affected rows == 1. Concurrent duplicate returns return HTTP 409 Conflict.
+- **Condition-Based Status Branching**:
+  - Returning in `GOOD` condition automatically reverts asset status to `AVAILABLE`.
+  - Returning in `DAMAGED` condition automatically routes asset status to `UNDER_MAINTENANCE` for technical repair queues.
+- **Transaction Rollback Protection**:
+  - If `ASSET_ISSUES` insert fails after status transition, explicit database `rollback()` reverts asset status back to `AVAILABLE`.
+- **Role-Based Access & Ownership Enforcement**:
+  - **Faculty**: Self-service issue to self, return own loans. Strictly blocked (HTTP 403) from accessing or returning transactions belonging to other faculty.
+  - **Administrator**: Full system visibility and assisted issue/return workflows.
+  - **Technical Staff**: Read-only inventory and audit access. Strictly blocked (HTTP 403) on POST and PUT.
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -241,29 +277,41 @@ CAMS/
 ├── pom.xml
 ├── README.md
 ├── run.bat / run.ps1
+├── test_master_data.ps1
+├── test_issue_return.ps1
 ├── test_module2.ps1
 ├── test_module2b.ps1
 ├── test_module3.ps1
 ├── db/
 │   ├── module2_assets.sql
 │   ├── module2b_details.sql
-│   └── module3_vendor_purchase.sql
+│   ├── module3_vendor_purchase.sql
+│   ├── module4_master_data.sql
+│   └── module5_issue_return.sql
 └── src/main/
     ├── java/com/cams/
     │   ├── Server.java
     │   ├── controller/
     │   │   ├── AssetServlet.java
     │   │   ├── AuthServlet.java
+    │   │   ├── CategoryServlet.java
+    │   │   ├── DepartmentServlet.java
+    │   │   ├── IssueServlet.java
+    │   │   ├── LocationServlet.java
     │   │   ├── PingServlet.java
     │   │   ├── PurchaseServlet.java
     │   │   ├── RoleTestServlet.java
     │   │   └── VendorServlet.java
     │   ├── dao/
     │   │   ├── AssetDAO.java / AssetDAOImpl.java
+    │   │   ├── CategoryDAO.java / CategoryDAOImpl.java
     │   │   ├── ClassroomDetailsDAO.java / ClassroomDetailsDAOImpl.java
     │   │   ├── ComputerDetailsDAO.java / ComputerDetailsDAOImpl.java
+    │   │   ├── DepartmentDAO.java / DepartmentDAOImpl.java
     │   │   ├── FurnitureDetailsDAO.java / FurnitureDetailsDAOImpl.java
+    │   │   ├── IssueDAO.java / IssueDAOImpl.java
     │   │   ├── LabDetailsDAO.java / LabDetailsDAOImpl.java
+    │   │   ├── LocationDAO.java / LocationDAOImpl.java
     │   │   ├── PingDAO.java / PingDAOImpl.java
     │   │   ├── PurchaseDAO.java / PurchaseDAOImpl.java
     │   │   ├── UserDAO.java / UserDAOImpl.java
@@ -273,11 +321,15 @@ CAMS/
     │   │   └── AuthorizationFilter.java
     │   ├── model/
     │   │   ├── Asset.java
+    │   │   ├── AssetIssue.java
     │   │   ├── AssetQueryCriteria.java
+    │   │   ├── Category.java
     │   │   ├── ClassroomDetails.java
     │   │   ├── ComputerDetails.java
+    │   │   ├── Department.java
     │   │   ├── FurnitureDetails.java
     │   │   ├── LabDetails.java
+    │   │   ├── Location.java
     │   │   ├── PagedResult.java
     │   │   ├── PingResult.java
     │   │   ├── Purchase.java
@@ -286,6 +338,8 @@ CAMS/
     │   ├── service/
     │   │   ├── AssetService.java / AssetServiceImpl.java
     │   │   ├── AuthService.java / AuthServiceImpl.java
+    │   │   ├── IssueService.java / IssueServiceImpl.java
+    │   │   ├── MasterDataService.java / MasterDataServiceImpl.java
     │   │   ├── PingService.java
     │   │   ├── PurchaseService.java / PurchaseServiceImpl.java
     │   │   └── VendorService.java / VendorServiceImpl.java
@@ -303,16 +357,22 @@ CAMS/
         ├── js/
         │   ├── app.js
         │   ├── assets.js
+        │   ├── issues.js
+        │   ├── master-data.js
         │   ├── purchases.js
         │   └── vendors.js
         ├── pages/
         │   ├── access-denied.html
         │   ├── assets.html
+        │   ├── issues.html
         │   ├── login.html
-        │   ├── purchases.html (redirect to admin/purchases.html)
-        │   ├── vendors.html (redirect to admin/vendors.html)
+        │   ├── master-data.html
+        │   ├── purchases.html
+        │   ├── vendors.html
         │   ├── admin/
         │   │   ├── dashboard.html
+        │   │   ├── issues.html
+        │   │   ├── master-data.html
         │   │   ├── purchases.html
         │   │   └── vendors.html
         │   ├── faculty/dashboard.html

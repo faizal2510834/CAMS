@@ -54,6 +54,26 @@ public class AuthorizationFilter implements Filter {
             return;
         }
 
+        // Special handling for Issue & Return Management API RBAC:
+        // GET -> All 3 roles permitted (Administrator, Faculty, Technical Staff)
+        // POST / PUT -> Administrator and Faculty permitted; Technical Staff blocked (403)
+        if (path.startsWith("/api/issues")) {
+            if ("POST".equals(method) || "PUT".equals(method)) {
+                if ("Technical Staff".equalsIgnoreCase(userRole)) {
+                    JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
+                            "Access denied: Technical Staff cannot issue or return equipment.");
+                    return;
+                }
+                if (!"Administrator".equalsIgnoreCase(userRole) && !"Faculty".equalsIgnoreCase(userRole)) {
+                    JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
+                            "Access denied: Administrator or Faculty role required to issue or return equipment.");
+                    return;
+                }
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
         String requiredRole = determineRequiredRole(path);
 
         // If this route does not require a specific role, proceed
@@ -84,10 +104,11 @@ public class AuthorizationFilter implements Filter {
         if (path.startsWith("/pages/admin/") || path.startsWith("/api/admin/")) {
             return "Administrator";
         }
-        if (path.startsWith("/api/vendors") || path.startsWith("/api/purchases")) {
+        if (path.startsWith("/api/vendors") || path.startsWith("/api/purchases") ||
+            path.startsWith("/api/departments") || path.startsWith("/api/locations") || path.startsWith("/api/categories")) {
             return "Administrator";
         }
-        if (path.startsWith("/pages/vendors") || path.startsWith("/pages/purchases")) {
+        if (path.startsWith("/pages/vendors") || path.startsWith("/pages/purchases") || path.startsWith("/pages/master-data")) {
             return "Administrator";
         }
         if (path.startsWith("/pages/faculty/") || path.startsWith("/api/faculty/")) {

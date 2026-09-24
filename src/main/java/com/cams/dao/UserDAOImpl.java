@@ -171,14 +171,17 @@ public class UserDAOImpl implements UserDAO {
                         "admin", PasswordUtil.hashPassword("Admin@123"), null);
                 User faculty = new User(null, "Dr. Sarah Jenkins", "Faculty", "Computer Science",
                         "faculty1", PasswordUtil.hashPassword("Faculty@123"), null);
+                User faculty2 = new User(null, "Prof. Michael Chang", "Faculty", "Information Technology",
+                        "faculty2", PasswordUtil.hashPassword("Faculty@123"), null);
                 User tech = new User(null, "Alex Rivera", "Technical Staff", "Hardware & Maintenance",
                         "tech1", PasswordUtil.hashPassword("Tech@123"), null);
 
                 createUser(admin);
                 createUser(faculty);
+                createUser(faculty2);
                 createUser(tech);
 
-                LOGGER.info("Seeding completed successfully. Seeded accounts: admin, faculty1, tech1");
+                LOGGER.info("Seeding completed successfully. Seeded accounts: admin, faculty1, faculty2, tech1");
             } else {
                 LOGGER.info("USERS table already populated with " + count + " users.");
             }

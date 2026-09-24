@@ -32,11 +32,18 @@ public final class JsonUtil {
     }
 
     /**
-     * Sends a structured JSON success response.
+     * Sends a structured JSON success response with default HTTP 200 OK.
      */
     public static void sendSuccess(HttpServletResponse response, String message, Object data) throws IOException {
+        sendSuccess(response, HttpServletResponse.SC_OK, message, data);
+    }
+
+    /**
+     * Sends a structured JSON success response with specified HTTP status code.
+     */
+    public static void sendSuccess(HttpServletResponse response, int statusCode, String message, Object data) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
-        response.setStatus(HttpServletResponse.SC_OK);
+        response.setStatus(statusCode);
 
         Map<String, Object> body = new HashMap<>();
         body.put("success", true);

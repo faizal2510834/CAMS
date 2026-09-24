@@ -10,6 +10,12 @@ import com.cams.dao.FurnitureDetailsDAO;
 import com.cams.dao.FurnitureDetailsDAOImpl;
 import com.cams.dao.LabDetailsDAO;
 import com.cams.dao.LabDetailsDAOImpl;
+import com.cams.dao.DepartmentDAO;
+import com.cams.dao.DepartmentDAOImpl;
+import com.cams.dao.LocationDAO;
+import com.cams.dao.LocationDAOImpl;
+import com.cams.dao.CategoryDAO;
+import com.cams.dao.CategoryDAOImpl;
 import com.cams.model.Asset;
 import com.cams.model.AssetQueryCriteria;
 import com.cams.model.ClassroomDetails;
@@ -80,13 +86,21 @@ public class AssetServiceImpl implements AssetService {
     private final ClassroomDetailsDAO classroomDetailsDAO;
     private final LabDetailsDAO labDetailsDAO;
     private final FurnitureDetailsDAO furnitureDetailsDAO;
+    private final DepartmentDAO departmentDAO;
+    private final LocationDAO locationDAO;
+    private final CategoryDAO categoryDAO;
+    private final MasterDataService masterDataService;
 
     public AssetServiceImpl() {
         this(new AssetDAOImpl(),
              new ComputerDetailsDAOImpl(),
              new ClassroomDetailsDAOImpl(),
              new LabDetailsDAOImpl(),
-             new FurnitureDetailsDAOImpl());
+             new FurnitureDetailsDAOImpl(),
+             new DepartmentDAOImpl(),
+             new LocationDAOImpl(),
+             new CategoryDAOImpl(),
+             new MasterDataServiceImpl());
     }
 
     public AssetServiceImpl(AssetDAO assetDAO) {
@@ -94,7 +108,11 @@ public class AssetServiceImpl implements AssetService {
              new ComputerDetailsDAOImpl(),
              new ClassroomDetailsDAOImpl(),
              new LabDetailsDAOImpl(),
-             new FurnitureDetailsDAOImpl());
+             new FurnitureDetailsDAOImpl(),
+             new DepartmentDAOImpl(),
+             new LocationDAOImpl(),
+             new CategoryDAOImpl(),
+             new MasterDataServiceImpl());
     }
 
     public AssetServiceImpl(AssetDAO assetDAO,
@@ -102,11 +120,35 @@ public class AssetServiceImpl implements AssetService {
                             ClassroomDetailsDAO classroomDetailsDAO,
                             LabDetailsDAO labDetailsDAO,
                             FurnitureDetailsDAO furnitureDetailsDAO) {
+        this(assetDAO,
+             computerDetailsDAO,
+             classroomDetailsDAO,
+             labDetailsDAO,
+             furnitureDetailsDAO,
+             new DepartmentDAOImpl(),
+             new LocationDAOImpl(),
+             new CategoryDAOImpl(),
+             new MasterDataServiceImpl());
+    }
+
+    public AssetServiceImpl(AssetDAO assetDAO,
+                            ComputerDetailsDAO computerDetailsDAO,
+                            ClassroomDetailsDAO classroomDetailsDAO,
+                            LabDetailsDAO labDetailsDAO,
+                            FurnitureDetailsDAO furnitureDetailsDAO,
+                            DepartmentDAO departmentDAO,
+                            LocationDAO locationDAO,
+                            CategoryDAO categoryDAO,
+                            MasterDataService masterDataService) {
         this.assetDAO = assetDAO;
         this.computerDetailsDAO = computerDetailsDAO;
         this.classroomDetailsDAO = classroomDetailsDAO;
         this.labDetailsDAO = labDetailsDAO;
         this.furnitureDetailsDAO = furnitureDetailsDAO;
+        this.departmentDAO = departmentDAO;
+        this.locationDAO = locationDAO;
+        this.categoryDAO = categoryDAO;
+        this.masterDataService = masterDataService;
     }
 
     @Override
@@ -161,16 +203,18 @@ public class AssetServiceImpl implements AssetService {
         }
         asset.setAssetName(asset.getAssetName().trim());
 
-        if (!AssetConstants.isValidCategory(asset.getCategory())) {
-            throw new AssetValidationException("Invalid Category: '" + asset.getCategory() + "'. Allowed: " + AssetConstants.CATEGORIES);
-        }
-
-        if (!AssetConstants.isValidDepartment(asset.getDepartment())) {
-            throw new AssetValidationException("Invalid Department: '" + asset.getDepartment() + "'. Allowed: " + AssetConstants.DEPARTMENTS);
-        }
-
-        if (!AssetConstants.isValidLocation(asset.getLocation())) {
-            throw new AssetValidationException("Invalid Location: '" + asset.getLocation() + "'. Allowed: " + AssetConstants.LOCATIONS);
+        try {
+            if (!categoryDAO.isActive(asset.getCategory())) {
+                throw new AssetValidationException("Invalid Category: '" + asset.getCategory() + "'. Category must be an active master data category.");
+            }
+            if (!departmentDAO.isActive(asset.getDepartment())) {
+                throw new AssetValidationException("Invalid Department: '" + asset.getDepartment() + "'. Department must be an active master data department.");
+            }
+            if (!locationDAO.isActive(asset.getLocation())) {
+                throw new AssetValidationException("Invalid Location: '" + asset.getLocation() + "'. Location must be an active master data location.");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error validating master data: " + e.getMessage(), e);
         }
 
         if (asset.getPurchaseDate() == null) {
@@ -265,14 +309,18 @@ public class AssetServiceImpl implements AssetService {
         if (updateData.getAssetName() == null || updateData.getAssetName().trim().isEmpty()) {
             throw new AssetValidationException("Asset Name is required");
         }
-        if (!AssetConstants.isValidCategory(updateData.getCategory())) {
-            throw new AssetValidationException("Invalid Category: '" + updateData.getCategory() + "'. Allowed: " + AssetConstants.CATEGORIES);
-        }
-        if (!AssetConstants.isValidDepartment(updateData.getDepartment())) {
-            throw new AssetValidationException("Invalid Department: '" + updateData.getDepartment() + "'. Allowed: " + AssetConstants.DEPARTMENTS);
-        }
-        if (!AssetConstants.isValidLocation(updateData.getLocation())) {
-            throw new AssetValidationException("Invalid Location: '" + updateData.getLocation() + "'. Allowed: " + AssetConstants.LOCATIONS);
+        try {
+            if (!categoryDAO.isActive(updateData.getCategory())) {
+                throw new AssetValidationException("Invalid Category: '" + updateData.getCategory() + "'. Category must be an active master data category.");
+            }
+            if (!departmentDAO.isActive(updateData.getDepartment())) {
+                throw new AssetValidationException("Invalid Department: '" + updateData.getDepartment() + "'. Department must be an active master data department.");
+            }
+            if (!locationDAO.isActive(updateData.getLocation())) {
+                throw new AssetValidationException("Invalid Location: '" + updateData.getLocation() + "'. Location must be an active master data location.");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error validating master data: " + e.getMessage(), e);
         }
         if (updateData.getPurchaseDate() == null) {
             throw new AssetValidationException("Purchase date is required");
@@ -399,7 +447,7 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public Map<String, List<String>> getOptions() {
-        return AssetConstants.getOptions();
+        return masterDataService.getMasterDataOptions();
     }
 
     // -------------------------------------------------------------------------
