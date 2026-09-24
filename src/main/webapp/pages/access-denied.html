@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - 403 Access Denied</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="auth-wrapper" style="max-width: 520px;">
+      <div class="auth-header">
+        <div class="badge" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">
+          <span class="badge-dot" style="background: #ef4444; box-shadow: 0 0 10px #ef4444;"></span>
+          Security Interception &bull; RBAC 403 Forbidden
+        </div>
+        <h1 class="title" style="font-size: 2.2rem; color: #f87171;">Access Denied</h1>
+        <p class="subtitle" style="font-size: 0.95rem;">
+          Your current authenticated role does not possess permissions to access this protected resource.
+        </p>
+      </div>
+
+      <div class="auth-card">
+        <div class="info-list" style="margin-bottom: 1.5rem;">
+          <div class="info-item">
+            <span class="info-key">Enforcing Filter</span>
+            <span class="info-val">AuthorizationFilter (Servlet Filter)</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Required Role</span>
+            <span class="info-val" id="reqRole" style="color: #f87171;">Administrator</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Your Active Role</span>
+            <span class="info-val" id="currentRole" style="color: #60a5fa;">Unknown</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Session Policy</span>
+            <span class="info-val">Role-Based Access Control (RBAC)</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; flex-direction: column;">
+          <button id="goHomeBtn" class="btn" onclick="goToAuthorizedDashboard()">
+            Return to My Authorized Dashboard
+          </button>
+          <button id="switchUserBtn" class="btn btn-secondary" onclick="logoutAndSwitch()">
+            Log Out & Switch User
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const reqRole = params.get('required') || 'Elevated Privilege';
+    const currentRole = params.get('current') || 'Standard User';
+
+    document.getElementById('reqRole').textContent = reqRole;
+    document.getElementById('currentRole').textContent = currentRole;
+
+    async function goToAuthorizedDashboard() {
+      try {
+        const res = await fetch('../api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          const role = data.data.role;
+          if (role === 'Administrator') window.location.href = 'admin/dashboard.html';
+          else if (role === 'Faculty') window.location.href = 'faculty/dashboard.html';
+          else if (role === 'Technical Staff') window.location.href = 'technical/dashboard.html';
+          else window.location.href = 'login.html';
+          return;
+        }
+      } catch (e) {}
+      window.location.href = 'login.html';
+    }
+
+    async function logoutAndSwitch() {
+      try {
+        await fetch('../api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

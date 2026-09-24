@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Campus Asset Management System (CAMS) - Infrastructure & Connection Verification">
+  <title>CAMS — Campus Asset Management System | Module 0: Foundation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span>Module 0 : Infrastructure & Verification</span>
+      </div>
+      <h1 class="title">Campus Asset Management System</h1>
+      <p class="subtitle">
+        Architectural Pipeline Proof-of-Life: Browser &rarr; Servlet &rarr; Service &rarr; DAO &rarr; JDBC &rarr; Oracle Database
+      </p>
+    </header>
+
+    <!-- Architecture Pipeline Flow -->
+    <section class="pipeline-section">
+      <div class="section-label">
+        <span>Architectural Request / Response Pipeline</span>
+      </div>
+      <div class="pipeline-flow" id="pipelineFlow">
+        <div class="pipeline-node" id="node-browser">
+          <div class="node-icon">&#127760;</div>
+          <div class="node-title">Browser</div>
+          <div class="node-desc">fetch() / JSON</div>
+        </div>
+
+        <div class="pipeline-arrow">&rarr;</div>
+
+        <div class="pipeline-node" id="node-servlet">
+          <div class="node-icon">&#9881;</div>
+          <div class="node-title">PingServlet</div>
+          <div class="node-desc">Jakarta Servlet 6.0</div>
+        </div>
+
+        <div class="pipeline-arrow">&rarr;</div>
+
+        <div class="pipeline-node" id="node-service">
+          <div class="node-icon">&#129302;</div>
+          <div class="node-title">PingService</div>
+          <div class="node-desc">Business Layer</div>
+        </div>
+
+        <div class="pipeline-arrow">&rarr;</div>
+
+        <div class="pipeline-node" id="node-dao">
+          <div class="node-icon">&#128451;</div>
+          <div class="node-title">PingDAO</div>
+          <div class="node-desc">Model Mapper</div>
+        </div>
+
+        <div class="pipeline-arrow">&rarr;</div>
+
+        <div class="pipeline-node" id="node-jdbc">
+          <div class="node-icon">&#128279;</div>
+          <div class="node-title">JDBC Driver</div>
+          <div class="node-desc">ojdbc11.jar</div>
+        </div>
+
+        <div class="pipeline-arrow">&rarr;</div>
+
+        <div class="pipeline-node" id="node-oracle">
+          <div class="node-icon">&#128450;</div>
+          <div class="node-title">Oracle DB</div>
+          <div class="node-desc">xepdb1 : 1521</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid -->
+    <main class="dashboard-grid">
+      <!-- Connection Specs Card -->
+      <section class="card" id="configCard">
+        <div class="card-title">
+          <span>Target Configuration</span>
+          <span class="status-pill" id="statusPill">Checking...</span>
+        </div>
+
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-key">Database Engine</span>
+            <span class="info-val">Oracle Database</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Host / Port</span>
+            <span class="info-val">localhost : 1521</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Service Name</span>
+            <span class="info-val">xepdb1</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Database User</span>
+            <span class="info-val">system</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">JDBC Driver</span>
+            <span class="info-val">ojdbc11.jar (Local)</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Servlet Runtime</span>
+            <span class="info-val">Apache Tomcat 10.1 (Jakarta)</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">JDK Version</span>
+            <span class="info-val">Java 17 (Temurin OpenJDK)</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Connection State</span>
+            <span class="info-val" id="dbStatusVal" style="font-weight: 700;">Initializing...</span>
+          </div>
+        </div>
+
+        <div class="notice-box notice-warning">
+          <div>
+            <strong>DB Password Configuration:</strong>
+            <p style="margin-top: 0.25rem;">
+              Remember to edit <code>src/main/resources/db.properties</code> to enter your Oracle password into <code>db.password</code> if not yet set.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Test Card -->
+      <section class="card" id="testCard">
+        <div class="card-title">
+          <span>Live Round-Trip Test</span>
+          <span class="status-pill" id="latencyBadge">-- ms</span>
+        </div>
+
+        <form id="pingForm" onsubmit="event.preventDefault();">
+          <div class="form-group">
+            <label for="pingInput" class="form-label">PreparedStatement Parameter (Echo Text)</label>
+            <input type="text" id="pingInput" class="form-input" value="CAMS Infrastructure Round-Trip Verified" placeholder="Enter custom message to bind as SQL parameter">
+          </div>
+
+          <button type="button" class="btn" id="pingBtn">
+            <span class="spinner" id="pingSpinner"></span>
+            <span>Execute Full Round-Trip Ping</span>
+          </button>
+        </form>
+
+        <div style="margin-top: 1.25rem; display: flex; flex-direction: column; flex: 1;">
+          <div class="terminal-window">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span class="terminal-dot dot-red"></span>
+                <span class="terminal-dot dot-yellow"></span>
+                <span class="terminal-dot dot-green"></span>
+              </div>
+              <span class="terminal-title">CAMS Diagnostic Console</span>
+            </div>
+            <pre class="terminal-content" id="terminalOutput">Awaiting execution...</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Module 1 Navigation Banner -->
+    <div style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-active); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="font-weight: 700; font-size: 1.1rem; color: #ffffff;">Ready for Authentication & Role Management?</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Module 1 is active with RBAC Servlet Filters, PBKDF2 Password Hashing, and 20-min session timeout.
+        </div>
+      </div>
+      <a href="pages/login.html" class="btn" style="width: auto; padding: 0.8rem 1.75rem; text-decoration: none; background: linear-gradient(135deg, #6366f1, #06b6d4); box-shadow: 0 4px 15px var(--accent-glow);">
+        Launch Module 1 Portal &rarr;
+      </a>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

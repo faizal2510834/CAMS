@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Faculty Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="avatarLetter" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);">F</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="userDisplayName">Dr. Sarah Jenkins</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="userUsername">@faculty1</span>
+            &bull;
+            <span id="userDept">Computer Science</span>
+            &bull;
+            <span class="role-badge faculty">Faculty</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="../assets.html" class="btn" style="font-size: 0.82rem; text-decoration: none; width: auto; padding: 0.6rem 1.1rem; background: linear-gradient(135deg, #0891b2, #3b82f6);">📦 View Assets</a>
+        <a href="../../index.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Health Check</a>
+        <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Header Banner -->
+    <div class="header" style="text-align: left; margin-bottom: 1.75rem;">
+      <div class="badge" style="background: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.3);">
+        <span class="badge-dot" style="background: #06b6d4; box-shadow: 0 0 10px #06b6d4;"></span>
+        Role: Faculty &bull; Academic Asset Requisitions & Tracking
+      </div>
+      <h1 class="title" style="font-size: 2rem;">Faculty Self-Service Portal</h1>
+      <p class="subtitle" style="margin: 0; max-width: 800px;">
+        Request laboratory instruments, view departmental equipment allocations, and report classroom hardware issues.
+      </p>
+    </div>
+
+    <!-- Stub Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-desc">Department Assets</div>
+        <div class="stat-number" style="color: #67e8f9;">24</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Active Requisitions</div>
+        <div class="stat-number" style="color: #a78bfa;">2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Assigned Lab</div>
+        <div class="stat-number" style="font-size: 1.4rem; color: #f9fafb;">CS-301</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Inactive Session Timeout</div>
+        <div class="stat-number" style="font-size: 1.5rem; color: #6ee7b7;">20 min</div>
+      </div>
+    </div>
+
+    <!-- RBAC Verification Grid -->
+    <div class="dashboard-grid">
+      <!-- Card 1: Authorized Faculty Endpoint -->
+      <div class="card">
+        <div class="card-title">
+          <span>Faculty RBAC Verification</span>
+          <span class="status-pill success" id="facultyApiStatus">READY</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Query <code>GET /api/faculty/summary</code> to prove that your session passes both <code>AuthenticationFilter</code> and <code>AuthorizationFilter</code>.
+        </p>
+
+        <button class="btn" style="background: #0891b2;" onclick="testFacultyApi()">
+          <span>Verify Faculty API Access</span>
+        </button>
+
+        <div class="terminal-window" style="margin-top: 1rem;">
+          <div class="terminal-bar">
+            <span class="terminal-title">RESPONSE &bull; /api/faculty/summary</span>
+          </div>
+          <pre class="terminal-content" id="facultyApiOutput">// Click 'Verify Faculty API Access' to fetch live data</pre>
+        </div>
+      </div>
+
+      <!-- Card 2: Unauthorized Admin Access Attempt (Proves Filter Interception) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Admin Probe (Interception Test)</span>
+          <span class="status-pill warning" id="probeStatus">UNTESTED</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Attempt to access <code>GET /api/admin/summary</code>. The <code>AuthorizationFilter</code> should intercept and reject this request with <strong>403 Forbidden</strong>.
+        </p>
+
+        <button class="btn btn-secondary" style="width: 100%;" onclick="testAdminProbe()">
+          <span>Attempt Admin API (/api/admin/summary)</span>
+        </button>
+
+        <div class="terminal-window" style="margin-top: 1rem;">
+          <div class="terminal-bar">
+            <span class="terminal-title">RBAC FILTER INTERCEPTION RESULT</span>
+          </div>
+          <pre class="terminal-content" id="probeOutput">// Click above to test 403 Forbidden enforcement</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadSession() {
+      try {
+        const res = await fetch('../../api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.data;
+          document.getElementById('userDisplayName').textContent = user.name;
+          document.getElementById('userUsername').textContent = '@' + user.username;
+          document.getElementById('userDept').textContent = user.department;
+          document.getElementById('avatarLetter').textContent = user.name.charAt(0).toUpperCase();
+        } else {
+          window.location.href = '../login.html?redirect=/pages/faculty/dashboard.html';
+        }
+      } catch (e) {
+        console.error('Session check failed', e);
+      }
+    }
+
+    async function testFacultyApi() {
+      const output = document.getElementById('facultyApiOutput');
+      const status = document.getElementById('facultyApiStatus');
+      output.textContent = '[HTTP REQUEST] GET /api/faculty/summary\nInterceptors: AuthenticationFilter -> AuthorizationFilter -> RoleTestServlet...';
+
+      try {
+        const res = await fetch('../../api/faculty/summary');
+        const json = await res.json();
+        output.textContent = `[HTTP STATUS] ${res.status} ${res.statusText}\n\n` + JSON.stringify(json, null, 2);
+        status.textContent = res.ok ? 'AUTHORIZED' : 'DENIED';
+        status.className = 'status-pill ' + (res.ok ? 'success' : 'error');
+      } catch (err) {
+        output.textContent = `[ERROR] ${err.message}`;
+        status.textContent = 'FAILED';
+        status.className = 'status-pill error';
+      }
+    }
+
+    async function testAdminProbe() {
+      const output = document.getElementById('probeOutput');
+      const status = document.getElementById('probeStatus');
+      output.textContent = '[HTTP REQUEST] GET /api/admin/summary\nEvaluating role "Faculty" against required role "Administrator"...';
+
+      try {
+        const res = await fetch('../../api/admin/summary');
+        const json = await res.json();
+        output.textContent = `[HTTP STATUS] ${res.status} ${res.statusText}\n\n` + JSON.stringify(json, null, 2);
+        if (res.status === 403) {
+          status.textContent = 'INTERCEPTED (403)';
+          status.className = 'status-pill error';
+        } else {
+          status.textContent = 'ACCESSED (' + res.status + ')';
+          status.className = 'status-pill warning';
+        }
+      } catch (err) {
+        output.textContent = `[ERROR] ${err.message}`;
+        status.textContent = 'FAILED';
+        status.className = 'status-pill error';
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch('../../api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      window.location.href = '../login.html';
+    }
+
+    loadSession();
+  </script>
+</body>
+</html>

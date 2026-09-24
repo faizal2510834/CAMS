@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Administrator Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="avatarLetter">A</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="userDisplayName">System Administrator</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="userUsername">@admin</span>
+            &bull;
+            <span id="userDept">IT Infrastructure</span>
+            &bull;
+            <span class="role-badge admin">Administrator</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="../assets.html" class="btn" style="font-size: 0.82rem; text-decoration: none; width: auto; padding: 0.6rem 1.1rem; background: linear-gradient(135deg, #6366f1, #06b6d4);">📦 Asset Registry</a>
+        <a href="../../index.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Health Check</a>
+        <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Header Banner -->
+    <div class="header" style="text-align: left; margin-bottom: 1.75rem;">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Role: Administrator &bull; Full System Authorization
+      </div>
+      <h1 class="title" style="font-size: 2rem;">Administrator Control Hub</h1>
+      <p class="subtitle" style="margin: 0; max-width: 800px;">
+        High-level oversight of campus equipment inventory, role permissions, active sessions, and audit logging.
+      </p>
+    </div>
+
+    <!-- Stub Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-desc">Total Campus Assets</div>
+        <div class="stat-number" id="statAssets">142</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Pending Requisitions</div>
+        <div class="stat-number" id="statReqs" style="color: #fbbf24;">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Registered Users</div>
+        <div class="stat-number" id="statUsers">18</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Inactive Session Timeout</div>
+        <div class="stat-number" style="font-size: 1.5rem; color: #6ee7b7;">20 min</div>
+      </div>
+    </div>
+
+    <!-- RBAC Verification Grid -->
+    <div class="dashboard-grid">
+      <!-- Card 1: Authorized API Verification -->
+      <div class="card">
+        <div class="card-title">
+          <span>Admin RBAC Verification</span>
+          <span class="status-pill success" id="adminApiStatus">READY</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Query the protected <code>GET /api/admin/summary</code> endpoint to prove your session has valid Administrator permissions.
+        </p>
+
+        <button class="btn" id="testAdminBtn" onclick="testAdminApi()">
+          <span>Verify Admin API Access</span>
+        </button>
+
+        <div class="terminal-window" style="margin-top: 1rem;">
+          <div class="terminal-bar">
+            <span class="terminal-title">RESPONSE &bull; /api/admin/summary</span>
+          </div>
+          <pre class="terminal-content" id="adminApiOutput">// Click 'Verify Admin API Access' to fetch live data</pre>
+        </div>
+      </div>
+
+      <!-- Card 2: Security Filter Cross-Check -->
+      <div class="card">
+        <div class="card-title">
+          <span>Cross-Role Interception Test</span>
+          <span class="status-pill warning" id="crossApiStatus">UNTESTED</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Probe <code>GET /api/faculty/summary</code>. The <code>AuthorizationFilter</code> will verify your role against the endpoint and demonstrate policy enforcement.
+        </p>
+
+        <button class="btn btn-secondary" style="width: 100%;" id="testCrossBtn" onclick="testCrossRoleApi()">
+          <span>Probe Faculty Endpoint (/api/faculty/summary)</span>
+        </button>
+
+        <div class="terminal-window" style="margin-top: 1rem;">
+          <div class="terminal-bar">
+            <span class="terminal-title">SECURITY FILTER INTERCEPTION OUTPUT</span>
+          </div>
+          <pre class="terminal-content" id="crossApiOutput">// Click above to test cross-role interception</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadSession() {
+      try {
+        const res = await fetch('../../api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.data;
+          document.getElementById('userDisplayName').textContent = user.name;
+          document.getElementById('userUsername').textContent = '@' + user.username;
+          document.getElementById('userDept').textContent = user.department;
+          document.getElementById('avatarLetter').textContent = user.name.charAt(0).toUpperCase();
+        } else {
+          window.location.href = '../login.html?redirect=/pages/admin/dashboard.html';
+        }
+      } catch (e) {
+        console.error('Session check failed', e);
+      }
+    }
+
+    async function testAdminApi() {
+      const output = document.getElementById('adminApiOutput');
+      const status = document.getElementById('adminApiStatus');
+      output.textContent = '[HTTP REQUEST] GET /api/admin/summary\nInterceptors: AuthenticationFilter -> AuthorizationFilter -> RoleTestServlet...';
+      
+      try {
+        const res = await fetch('../../api/admin/summary');
+        const json = await res.json();
+        output.textContent = `[HTTP STATUS] ${res.status} ${res.statusText}\n\n` + JSON.stringify(json, null, 2);
+        status.textContent = res.ok ? 'AUTHORIZED' : 'DENIED';
+        status.className = 'status-pill ' + (res.ok ? 'success' : 'error');
+      } catch (err) {
+        output.textContent = `[ERROR] ${err.message}`;
+        status.textContent = 'FAILED';
+        status.className = 'status-pill error';
+      }
+    }
+
+    async function testCrossRoleApi() {
+      const output = document.getElementById('crossApiOutput');
+      const status = document.getElementById('crossApiStatus');
+      output.textContent = '[HTTP REQUEST] GET /api/faculty/summary\nAuthorizationFilter is evaluating your role: "Administrator"...';
+      
+      try {
+        const res = await fetch('../../api/faculty/summary');
+        const json = await res.json();
+        output.textContent = `[HTTP STATUS] ${res.status} ${res.statusText}\n\n` + JSON.stringify(json, null, 2);
+        if (res.status === 403) {
+          status.textContent = 'INTERCEPTED (403)';
+          status.className = 'status-pill error';
+        } else {
+          status.textContent = 'ACCESSED (' + res.status + ')';
+          status.className = 'status-pill ' + (res.ok ? 'success' : 'warning');
+        }
+      } catch (err) {
+        output.textContent = `[ERROR] ${err.message}`;
+        status.textContent = 'FAILED';
+        status.className = 'status-pill error';
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch('../../api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      window.location.href = '../login.html';
+    }
+
+    loadSession();
+  </script>
+</body>
+</html>

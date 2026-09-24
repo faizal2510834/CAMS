@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Login & Access Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="auth-wrapper">
+      <div class="auth-header">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          Module 1: Authentication & Role Management
+        </div>
+        <h1 class="title" style="font-size: 2rem;">Sign In to CAMS</h1>
+        <p class="subtitle" style="font-size: 0.95rem;">Enter your credentials to access your role-specific campus asset portal.</p>
+      </div>
+
+      <div class="auth-card">
+        <!-- Status Notification Box -->
+        <div id="alertBox" class="notice-box notice-warning" style="display: none; margin-top: 0; margin-bottom: 1.25rem;">
+          <span id="alertIcon">⚠️</span>
+          <span id="alertMessage"></span>
+        </div>
+
+        <form id="loginForm" autocomplete="off">
+          <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <input type="text" id="username" class="form-input" placeholder="e.g. admin, faculty1, tech1" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" class="form-input" placeholder="••••••••••••" required>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn" style="margin-top: 0.5rem;">
+            <span class="spinner" id="loginSpinner"></span>
+            <span id="btnText">Sign In</span>
+          </button>
+        </form>
+
+        <!-- Quick Demo Credentials for Fast Testing -->
+        <div class="role-chips">
+          <span class="section-label" style="margin-bottom: 0.25rem; font-size: 0.75rem;">⚡ Quick-Fill Demo Roles</span>
+          
+          <button type="button" class="chip-btn" onclick="fillCredentials('admin', 'Admin@123')">
+            <span><strong>admin</strong> / Admin@123</span>
+            <span class="role-badge admin">Administrator</span>
+          </button>
+
+          <button type="button" class="chip-btn" onclick="fillCredentials('faculty1', 'Faculty@123')">
+            <span><strong>faculty1</strong> / Faculty@123</span>
+            <span class="role-badge faculty">Faculty</span>
+          </button>
+
+          <button type="button" class="chip-btn" onclick="fillCredentials('tech1', 'Tech@123')">
+            <span><strong>tech1</strong> / Tech@123</span>
+            <span class="role-badge technical">Technical Staff</span>
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.82rem;">
+          <a href="../index.html" style="color: var(--text-muted); text-decoration: none; transition: var(--transition);">
+            &larr; Back to System Health (Module 0)
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const btnText = document.getElementById('btnText');
+    const alertBox = document.getElementById('alertBox');
+    const alertIcon = document.getElementById('alertIcon');
+    const alertMessage = document.getElementById('alertMessage');
+
+    // Preset filler
+    function fillCredentials(u, p) {
+      usernameInput.value = u;
+      passwordInput.value = p;
+      hideAlert();
+    }
+
+    function showAlert(type, msg) {
+      alertBox.className = 'notice-box ' + (type === 'danger' ? 'notice-danger' : type === 'success' ? 'notice-success' : 'notice-warning');
+      alertIcon.textContent = (type === 'danger' ? '⛔' : type === 'success' ? '✓' : '⚠️');
+      alertMessage.textContent = msg;
+      alertBox.style.display = 'flex';
+    }
+
+    function hideAlert() {
+      alertBox.style.display = 'none';
+    }
+
+    // Check if redirected from a protected page
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('redirect')) {
+      showAlert('warning', 'Session required: Please log in to access ' + params.get('redirect'));
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!username || !password) {
+        showAlert('danger', 'Please enter both username and password.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      loginSpinner.style.display = 'inline-block';
+      btnText.textContent = 'Verifying...';
+
+      try {
+        const response = await fetch('../api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showAlert('success', `Welcome ${data.data.user.name}! Redirecting to ${data.data.user.role} Dashboard...`);
+          
+          setTimeout(() => {
+            const dest = data.data.redirectUrl || '../pages/admin/dashboard.html';
+            window.location.href = dest;
+          }, 800);
+        } else {
+          // Clean 401 display
+          showAlert('danger', data.message || 'Invalid username or password.');
+          submitBtn.disabled = false;
+          loginSpinner.style.display = 'none';
+          btnText.textContent = 'Sign In';
+        }
+      } catch (err) {
+        showAlert('danger', 'Unable to reach authentication server. Please ensure Tomcat is running.');
+        submitBtn.disabled = false;
+        loginSpinner.style.display = 'none';
+        btnText.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

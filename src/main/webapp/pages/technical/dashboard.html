@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Technical Staff Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="avatarLetter" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">T</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="userDisplayName">Alex Rivera</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="userUsername">@tech1</span>
+            &bull;
+            <span id="userDept">Hardware & Maintenance</span>
+            &bull;
+            <span class="role-badge technical">Technical Staff</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="../assets.html" class="btn" style="font-size: 0.82rem; text-decoration: none; width: auto; padding: 0.6rem 1.1rem; background: linear-gradient(135deg, #d97706, #ef4444);">📦 View Assets</a>
+        <a href="../../index.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Health Check</a>
+        <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Header Banner -->
+    <div class="header" style="text-align: left; margin-bottom: 1.75rem;">
+      <div class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.3);">
+        <span class="badge-dot" style="background: #f59e0b; box-shadow: 0 0 10px #f59e0b;"></span>
+        Role: Technical Staff &bull; Maintenance, Repairs & Lab Servicing
+      </div>
+      <h1 class="title" style="font-size: 2rem;">Technical Maintenance Workspace</h1>
+      <p class="subtitle" style="margin: 0; max-width: 800px;">
+        Manage preventative servicing schedules, repair queues, warranty records, and equipment health status logs.
+      </p>
+    </div>
+
+    <!-- Stub Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-desc">Open Work Orders</div>
+        <div class="stat-number" style="color: #f59e0b;">5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Urgent Repairs</div>
+        <div class="stat-number" style="color: #ef4444;">1</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Scheduled Inspections</div>
+        <div class="stat-number" style="color: #34d399;">8</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Inactive Session Timeout</div>
+        <div class="stat-number" style="font-size: 1.5rem; color: #6ee7b7;">20 min</div>
+      </div>
+    </div>
+
+    <!-- RBAC Verification Grid -->
+    <div class="dashboard-grid">
+      <!-- Card 1: Authorized Technical Endpoint -->
+      <div class="card">
+        <div class="card-title">
+          <span>Technical RBAC Verification</span>
+          <span class="status-pill success" id="techApiStatus">READY</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Query <code>GET /api/technical/summary</code> to prove that your session passes both <code>AuthenticationFilter</code> and <code>AuthorizationFilter</code>.
+        </p>
+
+        <button class="btn" style="background: #d97706;" onclick="testTechApi()">
+          <span>Verify Technical API Access</span>
+        </button>
+
+        <div class="terminal-window" style="margin-top: 1rem;">
+          <div class="terminal-bar">
+            <span class="terminal-title">RESPONSE &bull; /api/technical/summary</span>
+          </div>
+          <pre class="terminal-content" id="techApiOutput">// Click 'Verify Technical API Access' to fetch live data</pre>
+        </div>
+      </div>
+
+      <!-- Card 2: Unauthorized Admin Access Attempt -->
+      <div class="card">
+        <div class="card-title">
+          <span>Admin Probe (Interception Test)</span>
+          <span class="status-pill warning" id="probeStatus">UNTESTED</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Attempt to access <code>GET /api/admin/summary</code>. The <code>AuthorizationFilter</code> should intercept and reject this request with <strong>403 Forbidden</strong>.
+        </p>
+
+        <button class="btn btn-secondary" style="width: 100%;" onclick="testAdminProbe()">
+          <span>Attempt Admin API (/api/admin/summary)</span>
+        </button>
+
+        <div class="terminal-window" style="margin-top: 1rem;">
+          <div class="terminal-bar">
+            <span class="terminal-title">RBAC FILTER INTERCEPTION RESULT</span>
+          </div>
+          <pre class="terminal-content" id="probeOutput">// Click above to test 403 Forbidden enforcement</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadSession() {
+      try {
+        const res = await fetch('../../api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.data;
+          document.getElementById('userDisplayName').textContent = user.name;
+          document.getElementById('userUsername').textContent = '@' + user.username;
+          document.getElementById('userDept').textContent = user.department;
+          document.getElementById('avatarLetter').textContent = user.name.charAt(0).toUpperCase();
+        } else {
+          window.location.href = '../login.html?redirect=/pages/technical/dashboard.html';
+        }
+      } catch (e) {
+        console.error('Session check failed', e);
+      }
+    }
+
+    async function testTechApi() {
+      const output = document.getElementById('techApiOutput');
+      const status = document.getElementById('techApiStatus');
+      output.textContent = '[HTTP REQUEST] GET /api/technical/summary\nInterceptors: AuthenticationFilter -> AuthorizationFilter -> RoleTestServlet...';
+
+      try {
+        const res = await fetch('../../api/technical/summary');
+        const json = await res.json();
+        output.textContent = `[HTTP STATUS] ${res.status} ${res.statusText}\n\n` + JSON.stringify(json, null, 2);
+        status.textContent = res.ok ? 'AUTHORIZED' : 'DENIED';
+        status.className = 'status-pill ' + (res.ok ? 'success' : 'error');
+      } catch (err) {
+        output.textContent = `[ERROR] ${err.message}`;
+        status.textContent = 'FAILED';
+        status.className = 'status-pill error';
+      }
+    }
+
+    async function testAdminProbe() {
+      const output = document.getElementById('probeOutput');
+      const status = document.getElementById('probeStatus');
+      output.textContent = '[HTTP REQUEST] GET /api/admin/summary\nEvaluating role "Technical Staff" against required role "Administrator"...';
+
+      try {
+        const res = await fetch('../../api/admin/summary');
+        const json = await res.json();
+        output.textContent = `[HTTP STATUS] ${res.status} ${res.statusText}\n\n` + JSON.stringify(json, null, 2);
+        if (res.status === 403) {
+          status.textContent = 'INTERCEPTED (403)';
+          status.className = 'status-pill error';
+        } else {
+          status.textContent = 'ACCESSED (' + res.status + ')';
+          status.className = 'status-pill warning';
+        }
+      } catch (err) {
+        output.textContent = `[ERROR] ${err.message}`;
+        status.textContent = 'FAILED';
+        status.className = 'status-pill error';
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch('../../api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      window.location.href = '../login.html';
+    }
+
+    loadSession();
+  </script>
+</body>
+</html>
