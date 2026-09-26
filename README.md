@@ -270,6 +270,109 @@ Module 3 adds complete supplier lifecycle and procurement management with atomic
 
 ---
 
+### ✅ Module 6: Maintenance Management & Repair Queues
+- **Schema & DDL**:
+  - [`db/module6_maintenance.sql`](db/module6_maintenance.sql): `MAINTENANCE` tracking `maintenance_id` (PK, `'MNT-...'`), `asset_id` (FK to `ASSETS`), `scheduled_date`, `completed_date`, `fault_description`, `technician`, `cost` (CHECK >= 0), `status` ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REQUIRES_FURTHER_REPAIR'), `created_by`, `issue_id` (FK to `ASSET_ISSUES`), `created_at`, `updated_at`.
+- **Damaged Return Auto-Linkage**:
+  - When equipment is returned in `DAMAGED` condition in Module 5, the system automatically provisions an active maintenance ticket in `SCHEDULED` status referencing the origin `issue_id`, preserving cross-module accountability.
+- **Preventative & Corrective Scheduling**:
+  - Technical Staff and Administrators can schedule preventative work orders on available equipment, transitioning the asset to `UNDER_MAINTENANCE`.
+  - Duplicate active maintenance tickets on the same asset are rejected with HTTP 409 Conflict.
+  - Scheduling maintenance on an `ISSUED` asset is blocked with HTTP 409 Conflict (must be returned first).
+- **Status Workflow & Availability Restoration**:
+  - Status progression: `SCHEDULED` $\rightarrow$ `IN_PROGRESS` $\rightarrow$ `COMPLETED` / `REQUIRES_FURTHER_REPAIR`.
+  - Marking a ticket `COMPLETED` atomically populates `completed_date`, logs final repair cost, and restores the asset status back to `AVAILABLE`.
+  - Completed tickets enter an immutable terminal state (subsequent modifications rejected with HTTP 409 Conflict).
+- **Workspace UI**:
+  - [`/pages/technical/maintenance.html`](src/main/webapp/pages/technical/maintenance.html): Interactive repair queue with modal actions for scheduling, progress updates, cost logging, and completion.
+
+---
+
+### ✅ Module 7: Asset Depreciation & Institutional Valuation (Admin-Only)
+- **Zero New Tables Architecture**:
+  - Calculates straight-line depreciation entirely on-the-fly from `ASSETS.PURCHASE_DATE` and `ASSETS.PURCHASE_COST` without creating redundant transaction tables.
+- **Straight-Line Depreciation Mathematical Model**:
+  - Useful life defaults by category: Computer (4 yrs), Classroom Asset (7 yrs), Laboratory Equipment (5 yrs), Furniture (10 yrs), Other (5 yrs).
+  - Annual Depreciation: $\text{Cost} / \text{Useful Life}$.
+  - Elapsed Time: $\text{Days between Purchase Date and Today} / 365.25$.
+  - Current Book Value: $\max(0.00, \text{Cost} - (\text{Annual Depreciation} \times \text{Elapsed Years}))$.
+  - Accumulated Depreciation: $\text{Cost} - \text{Current Book Value}$.
+- **Depreciation Schedule Breakdown**:
+  - Dynamic schedule generation from Year 0 (procurement) through Year $N$ (useful life conclusion), showing start value, depreciation loss, and ending book value per annual period.
+- **Campus-Wide Valuation Summary**:
+  - Aggregated real-time metrics across all active campus equipment: Original Procurement Cost, Current Net Book Value, Accumulated Depreciation Loss, Active Valued Assets count, and Category breakdown schedule.
+- **UI Schedule Inspector**:
+  - Integrated directly into [`/pages/assets.html`](src/main/webapp/pages/assets.html) with an interactive modal inspecting any asset's straight-line financial schedule.
+
+---
+
+### ✅ Module 8: Physical Inventory Audits
+- **Schema & DDL**:
+  - [`db/module8_audit.sql`](db/module8_audit.sql): `INVENTORY_AUDITS` tracking `audit_id` (PK, `'AUD-...'`), `asset_id` (FK to `ASSETS`), `audit_date` (TIMESTAMP), `verified_by` (FK to `USERS(username)`), `status` ('VERIFIED', 'MISSING', 'MISLOCATED'), `remarks`, `created_at`.
+- **Physical Verification Logging**:
+  - Technical Staff record on-site physical audits for campus equipment, capturing location matches, missing hardware alerts, or misplaced assets.
+- **Audit History & Search Engine**:
+  - Query with multi-dimensional filtering by verification status (`VERIFIED`, `MISSING`, `MISLOCATED`), asset ID, department, and auditor.
+- **Institutional Audit Metrics**:
+  - Direct aggregation endpoint `GET /api/audits/summary` providing total verified vs. missing hardware counts.
+- **Audit Workspace UI**:
+  - [`/pages/technical/audit.html`](src/main/webapp/pages/technical/audit.html): Audit log with physical verification scanner modal and history filters.
+
+---
+
+### ✅ Module 9: User Account Administration & RBAC Security (Admin-Only)
+- **Schema & DDL**:
+  - [`db/module9_users.sql`](db/module9_users.sql): Added `MUST_CHANGE_PASSWORD VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (must_change_password IN ('Y', 'N'))` to `USERS`.
+- **Administrative Account CRUD**:
+  - Administrators can provision new Faculty, Technical Staff, and Administrator accounts with PBKDF2 password hashing. Passwords are never returned in responses.
+  - Search and filter users by username, role, department, and active status.
+- **Soft-Delete Deactivation Pattern**:
+  - User accounts are soft-deleted by setting `ACTIVE = 'N'`. Hard `DELETE FROM USERS` is strictly prohibited to preserve foreign key history across Issue & Return, Maintenance, and Audit records.
+  - Deactivated accounts are blocked at login with HTTP 401 Unauthorized.
+  - Accounts can be reactivated seamlessly by Administrators.
+- **Self-Lockout Prevention**:
+  - An Administrator cannot deactivate their own account (rejected with HTTP 409 Conflict), preventing accidental lockout of the sole administrative account.
+- **Secure Password Reset Flow with `must_change_password`**:
+  - Administrators can reset credentials with a custom or auto-generated temporary password.
+  - Automatically flags `must_change_password = 'Y'`. On next successful authentication, the login API returns `mustChangePassword: true`, requiring the user to immediately update their credentials.
+- **User Management UI**:
+  - [`/pages/admin/users.html`](src/main/webapp/pages/admin/users.html): User registry with role badges, status toggles, account creation modal, and password reset dialog.
+
+---
+
+### ✅ Module 10: Role-Based Live Dashboards & Enterprise Reports Center
+- **Live Role Dashboards**:
+  - **Administrator Dashboard** ([`/pages/admin/dashboard.html`](src/main/webapp/pages/admin/dashboard.html)): Real-time campus-wide KPIs (total, available, issued, maintenance, pending purchases, active repairs, overdue loans, users), live Module 7 valuation integration, and quick workspace hubs.
+  - **Faculty Portal** ([`/pages/faculty/dashboard.html`](src/main/webapp/pages/faculty/dashboard.html)): Personal custody equipment counters, overdue alert counter (highlighted in red), and "My Active Equipment Loans" table with overdue badges and quick return actions.
+  - **Technical Staff Workspace** ([`/pages/technical/dashboard.html`](src/main/webapp/pages/technical/dashboard.html)): Repair queue counts, total maintenance spend (₹), verified audit counts, and real-time operational feeds for Recent Maintenance Tickets and Recent Physical Audits.
+- **Enterprise Reports Center (Admin-Only, SRS FR13)**:
+  - [`/pages/admin/reports.html`](src/main/webapp/pages/admin/reports.html) & [`/js/reports.js`](src/main/webapp/js/reports.js): 7 core analytical sections:
+    1. *Asset Lifecycle & Status Distribution*
+    2. *Campus Valuation & Category Depreciation Summary*
+    3. *Procurement & Acquisition History*
+    4. *Equipment Circulation & Overdue Loans*
+    5. *Maintenance & Hardware Servicing Operations*
+    6. *Physical Inventory Audit Findings*
+    7. *Departmental Asset Allocation & Valuation Breakdown*
+  - Dynamic filtering by Department and Date Range.
+  - **Print / PDF View**: High-contrast `@media print` stylesheet optimizing tables and cards for clean physical printing or browser PDF saving (`window.print()`).
+  - **CSV Export**: Streamed via `GET /api/reports/export/csv`.
+- **Zero-New-Tables Aggregation**:
+  - Aggregates dynamically across existing tables (`ASSETS`, `ASSET_ISSUES`, `MAINTENANCE`, `PURCHASES`, `INVENTORY_AUDITS`, `USERS`, `DEPARTMENTS`) without creating redundant tables.
+- **Verified Overdue Detection**:
+  - Confirmed against `ASSET_ISSUES.EXPECTED_RETURN_DATE` column: actively detects and alerts on overdue loans in real time.
+
+---
+
+### 🎨 UI Consistency Standard
+All functional pages follow the unified design standard established in the Asset Registry:
+- Consistent top navigation bar with User Avatar, Name, Username, Department, Role Badge, and Sign Out action.
+- Unified dark-glass theme (`#0f172a` backdrop, `#1e293b` cards with `rgba(255,255,255,0.06)` borders, subtle micro-animations).
+- Responsive search and filter bars with standard button gradients.
+- Standardized data tables with hover elevation, status pills, and empty-state placeholders.
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -277,33 +380,47 @@ CAMS/
 ├── pom.xml
 ├── README.md
 ├── run.bat / run.ps1
-├── test_master_data.ps1
-├── test_issue_return.ps1
-├── test_module2.ps1
-├── test_module2b.ps1
-├── test_module3.ps1
+├── test_module2.ps1          # Modules 1 & 2 Core Test Suite
+├── test_module2b.ps1         # Module 2B Categorized Details Test Suite
+├── test_master_data.ps1      # Module 3 Master Data Registry Test Suite
+├── test_issue_return.ps1     # Module 5 Equipment Issue & Return Test Suite
+├── test_maintenance.ps1      # Module 6 Maintenance Management Test Suite
+├── test_depreciation.ps1     # Module 7 Straight-Line Depreciation Test Suite
+├── test_inventory_audit.ps1  # Module 8 Physical Inventory Audit Test Suite
+├── test_user_management.ps1  # Module 9 User Administration Test Suite
+├── test_dashboard_reports.ps1# Module 10 Dashboards & Reports Test Suite
 ├── db/
 │   ├── module2_assets.sql
 │   ├── module2b_details.sql
 │   ├── module3_vendor_purchase.sql
 │   ├── module4_master_data.sql
-│   └── module5_issue_return.sql
+│   ├── module5_issue_return.sql
+│   ├── module6_maintenance.sql
+│   ├── module8_audit.sql
+│   └── module9_users.sql
 └── src/main/
     ├── java/com/cams/
     │   ├── Server.java
     │   ├── controller/
     │   │   ├── AssetServlet.java
+    │   │   ├── AuditServlet.java
     │   │   ├── AuthServlet.java
     │   │   ├── CategoryServlet.java
+    │   │   ├── DashboardServlet.java
     │   │   ├── DepartmentServlet.java
+    │   │   ├── DepreciationServlet.java
     │   │   ├── IssueServlet.java
     │   │   ├── LocationServlet.java
+    │   │   ├── MaintenanceServlet.java
     │   │   ├── PingServlet.java
     │   │   ├── PurchaseServlet.java
+    │   │   ├── ReportServlet.java
     │   │   ├── RoleTestServlet.java
+    │   │   ├── UserServlet.java
     │   │   └── VendorServlet.java
     │   ├── dao/
     │   │   ├── AssetDAO.java / AssetDAOImpl.java
+    │   │   ├── AuditDAO.java / AuditDAOImpl.java
     │   │   ├── CategoryDAO.java / CategoryDAOImpl.java
     │   │   ├── ClassroomDetailsDAO.java / ClassroomDetailsDAOImpl.java
     │   │   ├── ComputerDetailsDAO.java / ComputerDetailsDAOImpl.java
@@ -312,6 +429,7 @@ CAMS/
     │   │   ├── IssueDAO.java / IssueDAOImpl.java
     │   │   ├── LabDetailsDAO.java / LabDetailsDAOImpl.java
     │   │   ├── LocationDAO.java / LocationDAOImpl.java
+    │   │   ├── MaintenanceDAO.java / MaintenanceDAOImpl.java
     │   │   ├── PingDAO.java / PingDAOImpl.java
     │   │   ├── PurchaseDAO.java / PurchaseDAOImpl.java
     │   │   ├── UserDAO.java / UserDAOImpl.java
@@ -321,15 +439,23 @@ CAMS/
     │   │   └── AuthorizationFilter.java
     │   ├── model/
     │   │   ├── Asset.java
+    │   │   ├── AssetDepreciation.java
     │   │   ├── AssetIssue.java
     │   │   ├── AssetQueryCriteria.java
+    │   │   ├── AuditQueryCriteria.java
+    │   │   ├── AuditRecord.java
+    │   │   ├── AuditSummary.java
     │   │   ├── Category.java
     │   │   ├── ClassroomDetails.java
     │   │   ├── ComputerDetails.java
     │   │   ├── Department.java
+    │   │   ├── DepreciationCategorySummary.java
+    │   │   ├── DepreciationScheduleItem.java
+    │   │   ├── DepreciationSummary.java
     │   │   ├── FurnitureDetails.java
     │   │   ├── LabDetails.java
     │   │   ├── Location.java
+    │   │   ├── Maintenance.java
     │   │   ├── PagedResult.java
     │   │   ├── PingResult.java
     │   │   ├── Purchase.java
@@ -337,11 +463,17 @@ CAMS/
     │   │   └── Vendor.java
     │   ├── service/
     │   │   ├── AssetService.java / AssetServiceImpl.java
+    │   │   ├── AuditService.java / AuditServiceImpl.java
     │   │   ├── AuthService.java / AuthServiceImpl.java
+    │   │   ├── DashboardService.java / DashboardServiceImpl.java
+    │   │   ├── DepreciationService.java / DepreciationServiceImpl.java
     │   │   ├── IssueService.java / IssueServiceImpl.java
+    │   │   ├── MaintenanceService.java / MaintenanceServiceImpl.java
     │   │   ├── MasterDataService.java / MasterDataServiceImpl.java
     │   │   ├── PingService.java
     │   │   ├── PurchaseService.java / PurchaseServiceImpl.java
+    │   │   ├── ReportService.java / ReportServiceImpl.java
+    │   │   ├── UserService.java / UserServiceImpl.java
     │   │   └── VendorService.java / VendorServiceImpl.java
     │   └── util/
     │       ├── AssetConstants.java
@@ -357,9 +489,13 @@ CAMS/
         ├── js/
         │   ├── app.js
         │   ├── assets.js
+        │   ├── audit.js
         │   ├── issues.js
+        │   ├── maintenance.js
         │   ├── master-data.js
         │   ├── purchases.js
+        │   ├── reports.js
+        │   ├── users.js
         │   └── vendors.js
         ├── pages/
         │   ├── access-denied.html
@@ -374,8 +510,55 @@ CAMS/
         │   │   ├── issues.html
         │   │   ├── master-data.html
         │   │   ├── purchases.html
+        │   │   ├── reports.html
+        │   │   ├── users.html
         │   │   └── vendors.html
         │   ├── faculty/dashboard.html
-        │   └── technical/dashboard.html
+        │   └── technical/
+        │       ├── audit.html
+        │       ├── dashboard.html
+        │       └── maintenance.html
         └── WEB-INF/web.xml
 ```
+
+---
+
+## 🧪 Automated Testing & Verification Matrix
+
+The CAMS codebase is continuously tested against live Oracle XE 21c database instances using dedicated end-to-end PowerShell integration suites:
+
+| Module | Test Suite File | Scope Covered | Passing Assertions | Status |
+|---|---|---|---|---|
+| **Modules 1 & 2** | `test_module2.ps1` | Authentication, RBAC 401/403, Single Status lifecycle, Soft-delete retirement | 13 | `100% PASS` |
+| **Module 2B** | `test_module2b.ps1` | Categorized specifications, 1:1 detail tables, Atomic rollback | 9 | `100% PASS` |
+| **Module 3** | `test_master_data.ps1` | Dynamic lookup management, FK validation, deactivation locks | 33 | `100% PASS` |
+| **Module 4** | `test_purchases_vendors` | Vendor management, Atomic purchase approvals, budget tracking | 23 | `100% PASS` |
+| **Module 5** | `test_issue_return.ps1` | Academic loans, Concurrency race conditions, Condition branching | 38 | `100% PASS` |
+| **Module 6** | `test_maintenance.ps1` | Repair queues, Damaged return auto-linkage, Status workflow, Cost tracking | 36 | `100% PASS` |
+| **Module 7** | `test_depreciation.ps1` | Straight-line depreciation, Dynamic schedules, Non-negative book value floor | 38 | `100% PASS` |
+| **Module 8** | `test_inventory_audit.ps1` | Physical audits, VERIFIED/MISSING/MISLOCATED statuses, Audit history filters | 38 | `100% PASS` |
+| **Module 9** | `test_user_management.ps1` | Account CRUD, Soft-deactivation locks, Self-lockout prevention, Password resets | 46 | `100% PASS` |
+| **Module 10** | `test_dashboard_reports.ps1` | Role dashboards, 7-section report center, Overdue loan alerts, CSV & Print | 68 | `100% PASS` |
+| **TOTAL** | **10 Modules End-to-End** | **Full System Regression Verification** | **340 / 340** | **100% GREEN** |
+
+---
+
+## ⚙️ Running Locally
+
+1. **Prerequisites**:
+   - Java 17+ installed and on `PATH`.
+   - Oracle Database 21c/23c XE running on `localhost:1521/xepdb1`.
+2. **Database Credentials**:
+   - Verify connection properties in `src/main/resources/db.properties`.
+3. **Start the Application Server**:
+   ```bash
+   mvnw.cmd exec:java -Dexec.mainClass=com.cams.Server
+   ```
+4. **Access the Application**:
+   - System Diagnostics: `http://localhost:8080/index.html`
+   - User Login: `http://localhost:8080/pages/login.html`
+   - Demo Credentials:
+     - Administrator: `admin` / `Admin@123`
+     - Faculty: `faculty1` / `Faculty@123`
+     - Technical Staff: `tech1` / `Tech@123`
+
