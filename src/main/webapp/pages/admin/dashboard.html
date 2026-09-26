@@ -31,7 +31,11 @@
         <a href="vendors.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🏢 Vendors</a>
         <a href="purchases.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📜 Purchases</a>
         <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🔄 Issues</a>
+        <a href="../technical/maintenance.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🛠️ Maintenance</a>
         <a href="master-data.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">⚙️ Master Data</a>
+        <a href="../technical/audit.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📋 Audits</a>
+        <a href="users.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">👥 Users</a>
+        <a href="reports.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📊 Reports</a>
         <a href="../../index.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.85rem;">Health</a>
         <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem; padding: 0.6rem 0.95rem;">Sign Out</button>
       </div>
@@ -49,23 +53,97 @@
       </p>
     </div>
 
-    <!-- Stub Stat Cards -->
-    <div class="stats-grid">
+    <!-- Live Campus KPI Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 1.5rem;">
       <div class="stat-card">
         <div class="stat-desc">Total Campus Assets</div>
-        <div class="stat-number" id="statAssets">142</div>
+        <div class="stat-number" id="statAssets">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Pending Requisitions</div>
-        <div class="stat-number" id="statReqs" style="color: #fbbf24;">3</div>
+        <div class="stat-desc">Available in Stock</div>
+        <div class="stat-number" id="statAvailable" style="color: #34d399;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Registered Users</div>
-        <div class="stat-number" id="statUsers">18</div>
+        <div class="stat-desc">Currently Issued</div>
+        <div class="stat-number" id="statIssued" style="color: #60a5fa;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Inactive Session Timeout</div>
-        <div class="stat-number" style="font-size: 1.5rem; color: #6ee7b7;">20 min</div>
+        <div class="stat-desc">Under Maintenance</div>
+        <div class="stat-number" id="statMaint" style="color: #fbbf24;">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Pending Approvals</div>
+        <div class="stat-number" id="statPurchases" style="color: #a78bfa;">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Active Repairs</div>
+        <div class="stat-number" id="statMaintQueue" style="color: #f59e0b;">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Overdue Returns</div>
+        <div class="stat-number" id="statOverdue" style="color: #ef4444;">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Active Users</div>
+        <div class="stat-number" id="statUsers" style="color: #38bdf8;">-</div>
+      </div>
+    </div>
+
+    <!-- Module 7: Campus Valuation & Depreciation Overview -->
+    <div class="card" style="margin-bottom: 1.75rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(99, 102, 241, 0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.3rem;">📉</span>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0;">Campus Asset Valuation & Depreciation</h3>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Module 7: Real-time straight-line financial valuation across all active equipment
+          </div>
+        </div>
+        <a href="../assets.html" class="btn" style="text-decoration: none; width: auto; font-size: 0.82rem; padding: 0.5rem 1rem; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #a5b4fc;">
+          Inspect Asset Schedule &rarr;
+        </a>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.25rem;">
+        <div class="stat-card" style="background: rgba(17, 24, 39, 0.6);">
+          <div class="stat-desc">Original Procurement Value</div>
+          <div class="stat-number" id="deprOriginalCost" style="color: var(--text-main); font-size: 1.6rem;">₹ 0.00</div>
+        </div>
+        <div class="stat-card" style="background: rgba(17, 24, 39, 0.6);">
+          <div class="stat-desc">Current Net Book Value</div>
+          <div class="stat-number" id="deprCurrentVal" style="color: #34d399; font-size: 1.6rem;">₹ 0.00</div>
+        </div>
+        <div class="stat-card" style="background: rgba(17, 24, 39, 0.6);">
+          <div class="stat-desc">Total Depreciated Amount</div>
+          <div class="stat-number" id="deprTotalLoss" style="color: #fbbf24; font-size: 1.6rem;">₹ 0.00</div>
+        </div>
+        <div class="stat-card" style="background: rgba(17, 24, 39, 0.6);">
+          <div class="stat-desc">Active Valued Assets</div>
+          <div class="stat-number" id="deprAssetCount" style="color: #a5b4fc; font-size: 1.6rem;">0</div>
+        </div>
+      </div>
+
+      <!-- Category Breakdown Mini-Table -->
+      <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">
+        Valuation Breakdown by Category
+      </div>
+      <div class="table-container" style="margin-bottom: 0; max-height: 200px; overflow-y: auto;">
+        <table class="cams-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Assets</th>
+              <th>Original Cost</th>
+              <th>Current Book Value</th>
+              <th>Depreciated Amount</th>
+            </tr>
+          </thead>
+          <tbody id="deprCategoryTableBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">Loading campus valuation breakdown...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -116,6 +194,38 @@
         </p>
         <a href="master-data.html" class="btn" style="text-decoration: none; width: auto; font-size: 0.82rem; padding: 0.55rem 1rem; background: linear-gradient(135deg, #f59e0b, #d97706);">
           Master Lookups &rarr;
+        </a>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(168, 85, 247, 0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <div>
+            <span style="font-size: 1.3rem;">👥</span>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">User Management</h3>
+          </div>
+          <span class="badge" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; margin: 0; background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">SECURITY</span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Manage campus logins, role permissions (Admin, Faculty, Technical Staff), soft-deactivation locks, and password resets.
+        </p>
+        <a href="users.html" class="btn" style="text-decoration: none; width: auto; font-size: 0.82rem; padding: 0.55rem 1rem; background: linear-gradient(135deg, #8b5cf6, #6366f1);">
+          Manage Users &rarr;
+        </a>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(59, 130, 246, 0.05)); border: 1px solid rgba(6, 182, 212, 0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <div>
+            <span style="font-size: 1.3rem;">📊</span>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">Analytics & Reports</h3>
+          </div>
+          <span class="badge" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; margin: 0; background: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.3);">MODULE 10</span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Generate comprehensive audit summaries, category valuations, departmental allocations, and exportable print-friendly reports.
+        </p>
+        <a href="reports.html" class="btn" style="text-decoration: none; width: auto; font-size: 0.82rem; padding: 0.55rem 1rem; background: linear-gradient(135deg, #06b6d4, #2563eb);">
+          Open Reports Center &rarr;
         </a>
       </div>
     </div>
@@ -228,6 +338,60 @@
       }
     }
 
+    async function loadDashboardKpis() {
+      try {
+        const res = await fetch('../../api/dashboard/admin');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const d = json.data;
+        const formatInr = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
+
+        // Asset Counts
+        if (d.assetCounts) {
+          document.getElementById('statAssets').textContent = d.assetCounts.total ?? 0;
+          document.getElementById('statAvailable').textContent = d.assetCounts.available ?? 0;
+          document.getElementById('statIssued').textContent = d.assetCounts.issued ?? 0;
+          document.getElementById('statMaint').textContent = d.assetCounts.underMaintenance ?? 0;
+        }
+
+        // Operational Counts
+        document.getElementById('statPurchases').textContent = d.pendingPurchasesCount ?? 0;
+        document.getElementById('statMaintQueue').textContent = d.activeMaintenanceCount ?? 0;
+        document.getElementById('statOverdue').textContent = d.overdueLoansCount ?? 0;
+
+        // User Counts
+        if (d.userCounts) {
+          document.getElementById('statUsers').textContent = d.userCounts.activeUsers ?? 0;
+        }
+
+        // Campus Valuation (Reuse Module 7)
+        if (d.valuation) {
+          const v = d.valuation;
+          document.getElementById('deprOriginalCost').textContent = formatInr(v.totalPurchaseCost);
+          document.getElementById('deprCurrentVal').textContent = formatInr(v.totalCurrentValue);
+          document.getElementById('deprTotalLoss').textContent = formatInr(v.totalAccumulatedDepreciation);
+          document.getElementById('deprAssetCount').textContent = v.assetCount || 0;
+
+          const tbody = document.getElementById('deprCategoryTableBody');
+          if (tbody && v.categoryBreakdown) {
+            tbody.innerHTML = v.categoryBreakdown.map(cat => `
+              <tr>
+                <td style="font-weight: 600;">${cat.category}</td>
+                <td style="font-family: var(--font-mono);">${cat.assetCount}</td>
+                <td>${formatInr(cat.originalCost)}</td>
+                <td style="color: #34d399; font-weight: 600;">${formatInr(cat.currentValue)}</td>
+                <td style="color: #fbbf24;">${formatInr(cat.depreciatedAmount)}</td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load admin dashboard KPIs', err);
+      }
+    }
+
     async function logout() {
       try {
         await fetch('../../api/auth/logout', { method: 'POST' });
@@ -236,6 +400,7 @@
     }
 
     loadSession();
+    loadDashboardKpis();
   </script>
 </body>
 </html>

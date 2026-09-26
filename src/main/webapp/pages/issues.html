@@ -8,348 +8,235 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
-  <style>
-    .table-container {
-      background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      overflow-x: auto;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-    }
-    table.cams-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.88rem;
-    }
-    table.cams-table th {
-      background: rgba(31, 41, 55, 0.7);
-      padding: 0.9rem 1rem;
-      color: var(--text-dim);
-      font-weight: 700;
-      text-transform: uppercase;
-      font-size: 0.72rem;
-      letter-spacing: 0.06em;
-      border-bottom: 1px solid var(--border-color);
-    }
-    table.cams-table td {
-      padding: 0.9rem 1rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      color: var(--text-main);
-      vertical-align: middle;
-    }
-    table.cams-table tbody tr:hover {
-      background: rgba(99, 102, 241, 0.04);
-    }
-    .badge {
-      display: inline-block;
-      padding: 0.2rem 0.6rem;
-      border-radius: 9999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .badge-issued {
-      background: rgba(245, 158, 11, 0.15);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .badge-returned {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-    .modal-card {
-      background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: var(--radius-lg);
-      width: 100%;
-      max-width: 580px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.96) translateY(-10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .modal-header {
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-body {
-      padding: 1.5rem;
-    }
-    .modal-footer {
-      padding: 1rem 1.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      background: rgba(0, 0, 0, 0.2);
-    }
-    .filter-card {
-      background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-      display: flex;
-      gap: 1rem;
-      align-items: flex-end;
-      flex-wrap: wrap;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-    .form-group label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-dim);
-    }
-    .form-control {
-      padding: 0.55rem 0.8rem;
-      border-radius: var(--radius-md);
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border-color);
-      color: #fff;
-      font-size: 0.85rem;
-    }
-  </style>
 </head>
 <body>
-  <div class="app-layout">
+  <div class="container" style="max-width: 1200px;">
     <!-- Top Navigation -->
-    <header class="navbar">
-      <div class="nav-brand">
-        <span class="brand-icon">🔄</span>
-        <span class="brand-title">CAMS</span>
-        <span class="brand-subtitle">Equipment Circulations</span>
-      </div>
-      <nav class="nav-links">
-        <a href="#" id="dashNav" class="nav-item">Dashboard</a>
-        <a href="assets.html" class="nav-item">Assets</a>
-        <a href="issues.html" class="nav-item active">Issue & Return</a>
-        <span id="adminLinks" style="display: none; gap: 0.5rem;">
-          <a href="admin/vendors.html" class="nav-item">Vendors</a>
-          <a href="admin/purchases.html" class="nav-item">Purchases</a>
-          <a href="admin/master-data.html" class="nav-item">Master Data</a>
-        </span>
-      </nav>
+    <nav class="dashboard-nav">
       <div class="nav-user">
-        <span class="user-badge" id="sessionUser">Loading...</span>
-        <button id="logoutBtn" class="btn-logout" title="Sign Out">Sign Out</button>
-      </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="main-content">
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div class="user-avatar" id="navAvatarLetter">U</div>
         <div>
-          <h1 class="page-title" style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">
-            🔄 Equipment Issue & Return Management
-          </h1>
-          <p class="text-dim" style="font-size: 0.95rem;" id="headerSubtitle">
-            Track equipment loans, academic department allocations, and operational condition returns.
-          </p>
-        </div>
-        <div id="actionBtnContainer">
-          <button id="openIssueModalBtn" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
-            <span>➕</span> <span>Issue Equipment</span>
-          </button>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="navUserDisplayName">Loading user...</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="navUsername">@user</span>
+            &bull;
+            <span id="navUserDept">Department</span>
+            &bull;
+            <span class="role-badge" id="navRoleBadge">Role</span>
+          </div>
         </div>
       </div>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <a href="#" id="dashNav" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Dashboard</a>
+        <a href="assets.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Assets</a>
+        <span id="adminLinks" style="display: none; gap: 0.5rem;">
+          <a href="admin/vendors.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Vendors</a>
+          <a href="admin/purchases.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Purchases</a>
+          <a href="technical/maintenance.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Maintenance</a>
+          <a href="admin/master-data.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Master Data</a>
+        </span>
+        <span id="techLinks" style="display: none; gap: 0.5rem;">
+          <a href="technical/maintenance.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Maintenance</a>
+        </span>
+        <button id="logoutBtn" class="btn btn-danger" style="font-size: 0.82rem;">Sign Out</button>
+      </div>
+    </nav>
 
-      <!-- Filter Bar -->
-      <div class="filter-card">
-        <div class="form-group" style="flex: 1; min-width: 160px;">
-          <label for="filterStatus">Status</label>
-          <select id="filterStatus" class="form-control">
+    <!-- Header & Action Row -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span id="moduleBadgeText">Module 5: Issue & Return</span>
+        </div>
+        <h1 class="title" style="font-size: 2.2rem; margin-bottom: 0.25rem;" id="pageTitle">
+          🔄 Equipment Issue & Return Management
+        </h1>
+        <p class="subtitle" style="margin: 0;" id="headerSubtitle">
+          Track equipment loans, academic department allocations, and operational condition returns.
+        </p>
+      </div>
+      <div id="actionBtnContainer">
+        <button id="openIssueModalBtn" class="btn" style="width: auto; padding: 0.75rem 1.4rem;">
+          ➕ Issue Equipment
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="filter-card">
+      <div class="filter-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="filterStatus">Status</label>
+          <select id="filterStatus" class="form-input">
             <option value="ALL">All Statuses</option>
             <option value="ISSUED" selected>Currently ISSUED</option>
             <option value="RETURNED">RETURNED (History)</option>
           </select>
         </div>
-        <div class="form-group" style="flex: 1; min-width: 180px;">
-          <label for="filterAsset">Asset ID / Search</label>
-          <input type="text" id="filterAsset" class="form-control" placeholder="e.g. AST-CSE-001">
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="filterAsset">Asset ID / Search</label>
+          <input type="text" id="filterAsset" class="form-input" placeholder="e.g. AST-CSE-001">
         </div>
-        <div class="form-group" style="flex: 1; min-width: 160px;">
-          <label for="filterDept">Department</label>
-          <select id="filterDept" class="form-control">
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="filterDept">Department</label>
+          <select id="filterDept" class="form-input">
             <option value="ALL">All Departments</option>
           </select>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
-          <button id="filterBtn" class="btn btn-primary" style="padding: 0.55rem 1rem;">Filter</button>
-          <button id="resetBtn" class="btn" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.55rem 0.9rem; border-radius: var(--radius-md); border:none; cursor:pointer;">Reset</button>
+
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <button id="filterBtn" class="btn" style="width: 100%; padding: 0.65rem 1rem;">Filter</button>
+          <button id="resetBtn" class="btn btn-secondary" style="width: auto; padding: 0.65rem 1rem;">Reset</button>
         </div>
       </div>
+    </div>
 
-      <!-- Table Container -->
-      <div class="table-container">
-        <table class="cams-table">
-          <thead>
-            <tr>
-              <th>Issue ID</th>
-              <th>Asset Information</th>
-              <th>Issued To</th>
-              <th>Issue Date</th>
-              <th>Expected Return</th>
-              <th>Actual Return</th>
-              <th>Status</th>
-              <th style="text-align: right;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="issuesTableBody">
-            <tr>
-              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-dim);">
-                Loading equipment issues...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </main>
+    <!-- Table Container -->
+    <div class="table-container">
+      <table class="cams-table">
+        <thead>
+          <tr>
+            <th style="width: 14%;">Issue ID</th>
+            <th style="width: 20%;">Asset Information</th>
+            <th style="width: 18%;">Issued To</th>
+            <th style="width: 12%;">Issue Date</th>
+            <th style="width: 12%;">Expected Return</th>
+            <th style="width: 12%;">Actual Return</th>
+            <th style="width: 12%;">Status</th>
+            <th style="text-align: right; width: 14%;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="issuesTableBody">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-dim);">
+              Loading equipment issues...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Issue Modal -->
+  <!-- Issue Modal Dialog -->
   <div id="issueModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 style="font-size: 1.15rem; font-weight: 700;">Issue Equipment</h3>
-        <button class="modal-close" style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer;" onclick="closeModal('issueModal')">&times;</button>
+        <h3 class="modal-title">Issue Equipment</h3>
+        <button class="close-btn" onclick="closeModal('issueModal')">&times;</button>
       </div>
       <form id="issueForm">
         <div class="modal-body">
-          <div style="margin-bottom: 1.1rem;">
-            <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-dim);">
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="modalAssetSelect">
               Select Available Asset *
             </label>
-            <select id="modalAssetSelect" class="form-control" style="width: 100%;" required>
+            <select id="modalAssetSelect" class="form-input" required>
               <option value="">Loading available assets...</option>
             </select>
           </div>
-          <div style="margin-bottom: 1.1rem;">
-            <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-dim);">
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="modalDeptSelect">
               Issuing Department (Lookup FK) *
             </label>
-            <select id="modalDeptSelect" class="form-control" style="width: 100%;" required>
+            <select id="modalDeptSelect" class="form-input" required>
               <option value="">Loading departments...</option>
             </select>
           </div>
-          <div id="adminUserField" style="display: none; margin-bottom: 1.1rem;">
-            <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-dim);">
+          <div id="adminUserField" class="form-group" style="display: none; margin-bottom: 1.1rem;">
+            <label class="form-label" for="modalUserIdInput">
               Recipient User ID
             </label>
-            <input type="number" id="modalUserIdInput" class="form-control" style="width: 100%;" placeholder="Leave empty for current administrator">
+            <input type="number" id="modalUserIdInput" class="form-input" placeholder="Leave empty for current administrator">
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.1rem;">
-            <div>
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-dim);">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="modalIssueDate">
                 Issue Date *
               </label>
-              <input type="date" id="modalIssueDate" class="form-control" style="width: 100%;" required>
+              <input type="date" id="modalIssueDate" class="form-input" required>
             </div>
-            <div>
-              <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-dim);">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="modalExpectedDate">
                 Expected Return Date
               </label>
-              <input type="date" id="modalExpectedDate" class="form-control" style="width: 100%;">
+              <input type="date" id="modalExpectedDate" class="form-input">
             </div>
           </div>
-          <div style="margin-bottom: 1.1rem;">
-            <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-dim);">
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="modalRemarks">
               Remarks / Purpose
             </label>
-            <input type="text" id="modalRemarks" class="form-control" style="width: 100%;" placeholder="e.g., Semester laboratory practicals, research demo">
+            <input type="text" id="modalRemarks" class="form-input" placeholder="e.g., Semester laboratory practicals, research demo">
           </div>
-          <div id="issueFormError" style="display: none; color: #f87171; font-size: 0.85rem; margin-top: 0.5rem;"></div>
+          <div id="issueFormError" class="notice-box notice-danger" style="display: none; margin-top: 0.75rem;"></div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.5rem 1rem; border-radius: var(--radius-md); border:none; cursor:pointer;" onclick="closeModal('issueModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-md); border:none; cursor:pointer;">Confirm Issue</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('issueModal')">Cancel</button>
+          <button type="submit" class="btn" style="width: auto; padding: 0.6rem 1.4rem;">Confirm Issue</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Return Modal -->
+  <!-- Return Modal Dialog -->
   <div id="returnModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 style="font-size: 1.15rem; font-weight: 700;">Process Equipment Return</h3>
-        <button class="modal-close" style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer;" onclick="closeModal('returnModal')">&times;</button>
+        <h3 class="modal-title">Process Equipment Return</h3>
+        <button class="close-btn" onclick="closeModal('returnModal')">&times;</button>
       </div>
       <form id="returnForm">
         <div class="modal-body">
-          <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
-            Returning asset <strong id="returnAssetDisplay" style="color: #fff;"></strong> (Transaction <span id="returnIssueIdDisplay" style="font-family: monospace;"></span>).
+          <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1.25rem;">
+            Returning asset <strong id="returnAssetDisplay" style="color: #fff;"></strong> (Transaction <span id="returnIssueIdDisplay" style="font-family: 'JetBrains Mono', monospace; color: #a5b4fc;"></span>).
           </p>
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-dim);">
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label class="form-label" for="returnConditionSelect">
               Return Equipment Condition *
             </label>
-            <select id="returnConditionSelect" class="form-control" style="width: 100%;" required>
+            <select id="returnConditionSelect" class="form-input" required>
               <option value="GOOD">Good / Functional (Asset returns to AVAILABLE)</option>
-              <option value="DAMAGED">Damaged / Defective (Asset transitions to UNDER_MAINTENANCE)</option>
+              <option value="DAMAGED">Damaged / Defective (Asset transitions to UNDER_MAINTENANCE &amp; schedules repair)</option>
               <option value="NEEDS_REPAIR">Needs Calibration / Repair (Asset transitions to UNDER_MAINTENANCE)</option>
             </select>
           </div>
-          <div style="margin-bottom: 1.25rem;">
-            <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-dim);">
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label class="form-label" for="returnRemarksInput">
               Return Inspection Notes / Remarks
             </label>
-            <input type="text" id="returnRemarksInput" class="form-control" style="width: 100%;" placeholder="e.g. Returned with all cables and accessories in good order">
+            <input type="text" id="returnRemarksInput" class="form-input" placeholder="e.g. Returned with all cables and accessories in good order">
           </div>
-          <div id="returnFormError" style="display: none; color: #f87171; font-size: 0.85rem; margin-top: 0.5rem;"></div>
+          <div id="returnFormError" class="notice-box notice-danger" style="display: none; margin-top: 0.75rem;"></div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.5rem 1rem; border-radius: var(--radius-md); border:none; cursor:pointer;" onclick="closeModal('returnModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.2rem; border-radius: var(--radius-md); border:none; cursor:pointer;">Complete Return</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('returnModal')">Cancel</button>
+          <button type="submit" class="btn" style="width: auto; padding: 0.6rem 1.4rem;">Complete Return</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- View Details Modal -->
+  <!-- View Details Modal Dialog -->
   <div id="viewModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 style="font-size: 1.15rem; font-weight: 700;">Issue Transaction Details</h3>
-        <button class="modal-close" style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer;" onclick="closeModal('viewModal')">&times;</button>
+        <h3 class="modal-title">Issue Transaction Details</h3>
+        <button class="close-btn" onclick="closeModal('viewModal')">&times;</button>
       </div>
       <div class="modal-body" id="viewModalContent">
         <!-- Dynamic details -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="closeModal('viewModal')">Close</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('viewModal')">Close</button>
       </div>
     </div>
   </div>
+
+  <!-- Hidden backward-compatibility elements -->
+  <span id="sessionUser" style="display: none;"></span>
 
   <script src="../js/issues.js"></script>
 </body>

@@ -40,10 +40,17 @@ public class AuthorizationFilter implements Filter {
         String userRole = (session != null) ? (String) session.getAttribute("role") : null;
 
         // Special handling for Asset Management API RBAC:
-        // GET (Search/View/Options) -> All 3 roles permitted
+        // GET /api/assets/{id}/depreciation -> Administrator only
         // POST / PUT / DELETE (Add/Edit/Retire) -> Administrator only
+        // Standard GET (Search/View/Options) -> All 3 roles permitted
         if (path.startsWith("/api/assets")) {
-            if ("POST".equals(method) || "PUT".equals(method) || "DELETE".equals(method)) {
+            if (path.endsWith("/depreciation")) {
+                if (!"Administrator".equalsIgnoreCase(userRole)) {
+                    JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
+                            "Access denied: Administrator role required to view asset depreciation details.");
+                    return;
+                }
+            } else if ("POST".equals(method) || "PUT".equals(method) || "DELETE".equals(method)) {
                 if (!"Administrator".equalsIgnoreCase(userRole)) {
                     JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
                             "Access denied: Administrator role required to create, modify, or retire assets.");
@@ -69,6 +76,55 @@ public class AuthorizationFilter implements Filter {
                             "Access denied: Administrator or Faculty role required to issue or return equipment.");
                     return;
                 }
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Special handling for Maintenance Management API & UI RBAC:
+        // Technical Staff and Administrator permitted; Faculty strictly blocked (403)
+        if (path.startsWith("/api/maintenance") || path.startsWith("/pages/maintenance") || path.startsWith("/pages/technical/maintenance.html")) {
+            if (!"Administrator".equalsIgnoreCase(userRole) && !"Technical Staff".equalsIgnoreCase(userRole)) {
+                if (path.startsWith("/api/")) {
+                    JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
+                            "Access denied: Only Technical Staff and Administrators can access maintenance management.");
+                } else {
+                    String redirectUrl = httpRequest.getContextPath() + "/pages/access-denied.html" +
+                            "?required=Technical+Staff&current=" + URLEncoder.encode(userRole != null ? userRole : "Anonymous", StandardCharsets.UTF_8);
+                    httpResponse.sendRedirect(redirectUrl);
+                }
+                return;
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Special handling for Physical Inventory Audit API & UI RBAC (Module 8):
+        // Technical Staff and Administrator permitted for UI and reports
+        // Faculty strictly blocked (403 Forbidden)
+        if (path.startsWith("/api/audits") || path.startsWith("/pages/technical/audit.html") || path.startsWith("/pages/audit")) {
+            if (!"Administrator".equalsIgnoreCase(userRole) && !"Technical Staff".equalsIgnoreCase(userRole)) {
+                if (path.startsWith("/api/")) {
+                    JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
+                            "Access denied: Role 'Technical Staff' or 'Administrator' required to access inventory audits.");
+                } else {
+                    String redirectUrl = httpRequest.getContextPath() + "/pages/access-denied.html" +
+                            "?required=Technical+Staff&current=" + URLEncoder.encode(userRole != null ? userRole : "Anonymous", StandardCharsets.UTF_8);
+                    httpResponse.sendRedirect(redirectUrl);
+                }
+                return;
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Special handling for Technical Dashboard API (Module 10):
+        // Technical Staff and Administrator permitted; Faculty strictly blocked (403)
+        if (path.startsWith("/api/dashboard/technical")) {
+            if (!"Administrator".equalsIgnoreCase(userRole) && !"Technical Staff".equalsIgnoreCase(userRole)) {
+                JsonUtil.sendError(httpResponse, HttpServletResponse.SC_FORBIDDEN,
+                        "Access denied: Technical Staff or Administrator role required.");
+                return;
             }
             chain.doFilter(request, response);
             return;
@@ -105,13 +161,15 @@ public class AuthorizationFilter implements Filter {
             return "Administrator";
         }
         if (path.startsWith("/api/vendors") || path.startsWith("/api/purchases") ||
-            path.startsWith("/api/departments") || path.startsWith("/api/locations") || path.startsWith("/api/categories")) {
+            path.startsWith("/api/departments") || path.startsWith("/api/locations") || path.startsWith("/api/categories") ||
+            path.startsWith("/api/depreciation") || path.startsWith("/api/users") ||
+            path.startsWith("/api/reports") || path.startsWith("/api/dashboard/admin")) {
             return "Administrator";
         }
         if (path.startsWith("/pages/vendors") || path.startsWith("/pages/purchases") || path.startsWith("/pages/master-data")) {
             return "Administrator";
         }
-        if (path.startsWith("/pages/faculty/") || path.startsWith("/api/faculty/")) {
+        if (path.startsWith("/pages/faculty/") || path.startsWith("/api/faculty/") || path.startsWith("/api/dashboard/faculty")) {
             return "Faculty";
         }
         if (path.startsWith("/pages/technical/") || path.startsWith("/api/technical/")) {

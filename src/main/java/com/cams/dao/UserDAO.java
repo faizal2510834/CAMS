@@ -47,6 +47,36 @@ public interface UserDAO {
     long countUsers() throws SQLException;
 
     /**
+     * Finds users matching search and filter criteria with pagination.
+     */
+    java.util.List<User> findAll(String search, String role, String department, String active, int page, int size) throws SQLException;
+
+    /**
+     * Counts users matching search and filter criteria.
+     */
+    long count(String search, String role, String department, String active) throws SQLException;
+
+    /**
+     * Updates editable details (name, role, department) for an existing user.
+     */
+    boolean updateUser(User user) throws SQLException;
+
+    /**
+     * Updates active status (soft-delete / reactivation) for a user.
+     */
+    boolean setActiveStatus(Long userId, String active) throws SQLException;
+
+    /**
+     * Updates password hash and sets must_change_password flag.
+     */
+    boolean resetPassword(Long userId, String passwordHash, String mustChangePassword) throws SQLException;
+
+    /**
+     * Updates must_change_password flag.
+     */
+    boolean updateMustChangePassword(Long userId, String mustChangePassword) throws SQLException;
+
+    /**
      * Ensures the USERS table exists and seeds the initial 3 demo users if empty.
      *
      * @return true if initialized or verified

@@ -6,6 +6,8 @@ import com.cams.model.PagedResult;
 import com.cams.model.User;
 import com.cams.util.DBConnection;
 
+import com.cams.model.Maintenance;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
@@ -22,16 +24,22 @@ public class IssueServiceImpl implements IssueService {
     private final AssetDAO assetDAO;
     private final DepartmentDAO departmentDAO;
     private final UserDAO userDAO;
+    private final MaintenanceDAO maintenanceDAO;
 
     public IssueServiceImpl() {
-        this(new IssueDAOImpl(), new AssetDAOImpl(), new DepartmentDAOImpl(), new UserDAOImpl());
+        this(new IssueDAOImpl(), new AssetDAOImpl(), new DepartmentDAOImpl(), new UserDAOImpl(), new MaintenanceDAOImpl());
     }
 
     public IssueServiceImpl(IssueDAO issueDAO, AssetDAO assetDAO, DepartmentDAO departmentDAO, UserDAO userDAO) {
+        this(issueDAO, assetDAO, departmentDAO, userDAO, new MaintenanceDAOImpl());
+    }
+
+    public IssueServiceImpl(IssueDAO issueDAO, AssetDAO assetDAO, DepartmentDAO departmentDAO, UserDAO userDAO, MaintenanceDAO maintenanceDAO) {
         this.issueDAO = issueDAO;
         this.assetDAO = assetDAO;
         this.departmentDAO = departmentDAO;
         this.userDAO = userDAO;
+        this.maintenanceDAO = maintenanceDAO;
     }
 
     @Override
@@ -176,6 +184,29 @@ public class IssueServiceImpl implements IssueService {
                 int statusUpdated = assetDAO.changeStatus(con, existing.getAssetId(), "ISSUED", targetStatus);
                 if (statusUpdated == 0) {
                     throw new IssueConflictException("Conflict updating asset status for '" + existing.getAssetId() + "'");
+                }
+
+                // If asset is returned in damaged condition, automatically create a maintenance ticket
+                if ("UNDER_MAINTENANCE".equals(targetStatus)) {
+                    Maintenance mnt = new Maintenance();
+                    String maintId = "MNT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                    mnt.setMaintenanceId(maintId);
+                    mnt.setAssetId(existing.getAssetId());
+                    mnt.setMaintenanceDate(today);
+                    mnt.setScheduledDate(today);
+                    String faultDesc = (returnRemarks != null && !returnRemarks.trim().isEmpty())
+                            ? returnRemarks.trim()
+                            : "Asset returned in " + (conditionOnReturn != null ? conditionOnReturn.trim() : "DAMAGED") + " condition.";
+                    if (faultDesc.length() > 500) {
+                        faultDesc = faultDesc.substring(0, 497) + "...";
+                    }
+                    mnt.setFaultDescription(faultDesc);
+                    mnt.setStatus("SCHEDULED");
+                    mnt.setCreatedBy(sessionUser.getUsername());
+                    mnt.setIssueId(issueId.trim());
+
+                    maintenanceDAO.create(con, mnt);
+                    LOGGER.info("Auto-created maintenance ticket " + maintId + " for damaged asset " + existing.getAssetId());
                 }
 
                 con.commit();

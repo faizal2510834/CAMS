@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Physical Inventory Audit Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .status-verified { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-missing { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-mislocated { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .scan-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .status-select-btn {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: rgba(31, 41, 55, 0.6);
+      color: var(--text-dim);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .status-select-btn:hover {
+      background: rgba(45, 55, 72, 0.8);
+      color: var(--text-main);
+    }
+
+    .status-select-btn.active.verified {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+      color: #34d399;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+    }
+
+    .status-select-btn.active.mislocated {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: #fbbf24;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+    }
+
+    .status-select-btn.active.missing {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #f87171;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 1200px;">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="avatarLetter">T</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="userDisplayName">Technical Staff</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="userUsername">@tech1</span>
+            &bull;
+            <span id="userDept">Hardware & Maintenance</span>
+            &bull;
+            <span class="role-badge" id="roleBadge">TECH</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+        <a href="dashboard.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Dashboard</a>
+        <a href="maintenance.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🛠️ Maintenance</a>
+        <a href="../assets.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📦 Assets</a>
+        <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🔄 Issues</a>
+        <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem; padding: 0.6rem 0.95rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Header Banner -->
+    <div class="header" style="text-align: left; margin-bottom: 1.5rem;">
+      <div class="badge" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.3);">
+        <span class="badge-dot" style="background: #6366f1;"></span>
+        Module 8: Physical Inventory Audit & Verification
+      </div>
+      <h1 class="title" style="font-size: 2.2rem; margin-bottom: 0.35rem;">Inventory Verification Workspace</h1>
+      <p class="subtitle" style="margin: 0; max-width: 850px;">
+        Scan or manually enter asset tags to conduct on-site physical verifications. Flag assets as Verified, Mislocated, or Missing to preserve inventory reconciliation.
+      </p>
+    </div>
+
+    <!-- KPI Summary Grid -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
+      <div class="stat-card">
+        <div class="stat-desc">Total Verifications</div>
+        <div class="stat-number" id="statTotalAudits">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Verified In Place</div>
+        <div class="stat-number" id="statVerified" style="color: #34d399;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Mislocated Assets</div>
+        <div class="stat-number" id="statMislocated" style="color: #fbbf24;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Missing / Unaccounted</div>
+        <div class="stat-number" id="statMissing" style="color: #f87171;">0</div>
+      </div>
+    </div>
+
+    <!-- Active Audit Submission Card -->
+    <div class="scan-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🔍</span> Conduct Physical Verification
+        </h3>
+        <span style="font-size: 0.78rem; color: var(--text-dim);">Barcode / QR Scanner Ready (Keyboard Emulation)</span>
+      </div>
+
+      <form id="auditForm" onsubmit="submitAudit(event)">
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; margin-bottom: 1rem;">
+          <div>
+            <label class="form-label" for="scanAssetId" style="font-size: 0.82rem; font-weight: 600;">Asset ID / Tag *</label>
+            <input type="text" id="scanAssetId" class="form-input" placeholder="e.g. AST-CSE-001 (Scan or Type)" autocomplete="off" autofocus required style="font-family: var(--font-mono); font-size: 1.05rem;">
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="lookupAsset()" style="height: 44px; padding: 0 1.25rem;">
+              🔎 Lookup
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Asset Preview Info Box -->
+        <div id="assetPreviewBox" style="display: none; background: rgba(17, 24, 39, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <div style="font-weight: 700; color: var(--text-main); font-size: 1.05rem;" id="previewAssetName">-</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                Category: <strong id="previewCategory">-</strong> &bull; Assigned Dept: <strong id="previewDept">-</strong>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Registered Location</div>
+              <div style="font-weight: 600; color: #a5b4fc; font-size: 0.9rem;" id="previewLocation">-</div>
+              <span class="badge" id="previewStatusBadge" style="margin-top: 0.25rem;">AVAILABLE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verification Status Button Selector -->
+        <div style="margin-bottom: 1.25rem;">
+          <label class="form-label" style="font-size: 0.82rem; font-weight: 600; margin-bottom: 0.5rem; display: block;">Verification Verdict *</label>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button type="button" class="status-select-btn active verified" id="btnStatusVerified" onclick="setStatus('VERIFIED')">
+              ✓ Verified In Place
+            </button>
+            <button type="button" class="status-select-btn mislocated" id="btnStatusMislocated" onclick="setStatus('MISLOCATED')">
+              ⚠️ Mislocated
+            </button>
+            <button type="button" class="status-select-btn missing" id="btnStatusMissing" onclick="setStatus('MISSING')">
+              ⛔ Missing / Unfound
+            </button>
+          </div>
+          <input type="hidden" id="selectedStatus" value="VERIFIED">
+        </div>
+
+        <!-- Remarks Input -->
+        <div style="margin-bottom: 1.25rem;">
+          <label class="form-label" for="auditRemarks" style="font-size: 0.82rem; font-weight: 600;">Auditor Remarks / Notes</label>
+          <input type="text" id="auditRemarks" class="form-input" placeholder="e.g. Verified in Rack 3, or found in Room 204 instead of main lab" maxlength="255">
+        </div>
+
+        <div id="formAlertBox" class="notice-box notice-danger" style="display: none; margin-bottom: 1rem;">
+          <span>⛔</span>
+          <span id="formAlertMsg"></span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="reset" class="btn btn-secondary" onclick="resetForm()" style="width: auto;">Clear Form</button>
+          <button type="submit" id="btnSubmitAudit" class="btn" style="width: auto; padding: 0.75rem 1.75rem; background: linear-gradient(135deg, #6366f1, #06b6d4); font-weight: 700;">
+            ✓ Record Audit Verification
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Audit History & Audit Trail Toolbar -->
+    <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem;">
+      <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin: 0;">
+        📜 Physical Verification Audit Trail
+      </h3>
+      <div style="font-size: 0.82rem; color: var(--text-muted);" id="tableCountSummary">
+        Showing audit logs
+      </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+      <div class="filter-grid">
+        <div>
+          <label class="form-label" for="filterAsset">Search Asset</label>
+          <input type="text" id="filterAsset" class="form-input" placeholder="Asset ID or Name..." oninput="debounceSearch()">
+        </div>
+        <div>
+          <label class="form-label" for="filterStatus">Verdict Status</label>
+          <select id="filterStatus" class="form-input" onchange="loadAudits(1)">
+            <option value="">All Statuses</option>
+            <option value="VERIFIED">VERIFIED</option>
+            <option value="MISLOCATED">MISLOCATED</option>
+            <option value="MISSING">MISSING</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="filterDepartment">Department</label>
+          <select id="filterDepartment" class="form-input" onchange="loadAudits(1)">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="resetFilters()" style="width: 100%; height: 42px;">
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Table -->
+    <div class="table-container">
+      <table class="cams-table">
+        <thead>
+          <tr>
+            <th>Audit ID</th>
+            <th>Asset Tag</th>
+            <th>Asset Details</th>
+            <th>Department</th>
+            <th>Verification Date</th>
+            <th>Auditor</th>
+            <th>Verdict</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody id="auditTableBody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+              <span class="spinner" style="display: inline-block; margin-right: 0.5rem;"></span> Loading audit verification trail...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-bar">
+      <div style="font-size: 0.85rem; color: var(--text-muted);" id="paginationSummary">
+        Showing 0-0 of 0 logs
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <button id="prevPageBtn" class="page-btn" disabled onclick="prevPage()">&larr; Previous</button>
+        <span id="currentPageBadge" style="font-size: 0.85rem; font-family: var(--font-mono); color: var(--text-main);">Page 1</span>
+        <button id="nextPageBtn" class="page-btn" disabled onclick="nextPage()">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/audit.js"></script>
+</body>
+</html>

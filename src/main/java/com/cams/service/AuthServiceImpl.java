@@ -42,6 +42,12 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = userOpt.get();
+
+        if (!user.isActive()) {
+            LOGGER.warning("Authentication failed: Account deactivated for user -> " + normalizedUsername);
+            throw new AuthenticationException("Account is deactivated. Please contact an administrator.");
+        }
+
         boolean valid = PasswordUtil.verifyPassword(password, user.getPassword());
         if (!valid) {
             LOGGER.warning("Authentication failed: Password mismatch for user -> " + normalizedUsername);

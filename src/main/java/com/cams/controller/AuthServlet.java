@@ -133,6 +133,7 @@ public class AuthServlet extends HttpServlet {
             Map<String, Object> data = new HashMap<>();
             data.put("user", safeUser);
             data.put("redirectUrl", redirectUrl);
+            data.put("mustChangePassword", safeUser.isMustChangePassword());
 
             JsonUtil.sendSuccess(response, "Login successful", data);
 

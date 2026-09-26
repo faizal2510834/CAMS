@@ -175,6 +175,8 @@ function renderTable(pagedResult) {
       const isDisposed = asset.status === 'DISPOSED';
       const isIssued = asset.status === 'ISSUED';
 
+      actionsHtml += ` <button class="action-btn" title="View Depreciation & Valuation" onclick="openDepreciationModal('${escapeHtml(asset.assetId)}')">📉 Value</button>`;
+
       if (!isDisposed) {
         actionsHtml += ` <button class="action-btn" onclick="openEditModal('${escapeHtml(asset.assetId)}')">✏️ Edit</button>`;
       }
@@ -774,4 +776,136 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+async function openDepreciationModal(assetId) {
+  const modal = document.getElementById('depreciationModal');
+  const content = document.getElementById('depreciationModalContent');
+  if (!modal || !content) return;
+
+  modal.style.display = 'flex';
+  content.innerHTML = `
+    <div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+      <span class="spinner" style="display: inline-block; margin-right: 0.5rem;"></span> Calculating straight-line valuation for ${escapeHtml(assetId)}...
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`../api/assets/${encodeURIComponent(assetId)}/depreciation`);
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      content.innerHTML = `
+        <div class="notice-box notice-danger">
+          <span>⛔</span>
+          <span>${escapeHtml(data.message || 'Failed to retrieve depreciation')}</span>
+        </div>
+      `;
+      return;
+    }
+
+    const d = data.data;
+    const formatInr = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
+
+    const costFmt = formatInr(d.purchaseCost);
+    const currentValFmt = formatInr(d.currentValue);
+    const annualFmt = formatInr(d.annualDepreciation);
+    const accumFmt = formatInr(d.accumulatedDepreciation);
+
+    const percentDepreciated = d.purchaseCost > 0 ? Math.min(100, Math.round((d.accumulatedDepreciation / d.purchaseCost) * 100)) : 100;
+    const percentRemaining = Math.max(0, 100 - percentDepreciated);
+
+    let scheduleRows = '';
+    (d.schedule || []).forEach(item => {
+      scheduleRows += `
+        <tr>
+          <td style="font-weight: 600; font-family: var(--font-mono);">${item.yearNumber === 0 ? 'Initial (Yr 0)' : 'Year ' + item.yearNumber}</td>
+          <td style="color: var(--text-muted);">${escapeHtml(item.date || '-')}</td>
+          <td style="color: #f87171;">${item.yearNumber === 0 ? '-' : formatInr(item.depreciationExpense)}</td>
+          <td style="color: #fbbf24;">${formatInr(item.accumulatedDepreciation)}</td>
+          <td style="font-weight: 700; color: #34d399;">${formatInr(item.endingBookValue)}</td>
+        </tr>
+      `;
+    });
+
+    content.innerHTML = `
+      <!-- Asset Header Summary Card -->
+      <div style="background: rgba(31, 41, 55, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <div style="font-size: 0.75rem; color: #a5b4fc; font-family: var(--font-mono); font-weight: 600;">${escapeHtml(d.assetId)}</div>
+            <h3 style="font-size: 1.25rem; margin: 0.2rem 0; color: var(--text-main);">${escapeHtml(d.assetName)}</h3>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">
+              ${escapeHtml(d.category)} &bull; ${escapeHtml(d.department)} &bull; Acquired: <strong>${escapeHtml(d.purchaseDate || '-')}</strong>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Current Valuation</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: #34d399;">${currentValFmt}</div>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3);">
+              ${percentRemaining}% Book Value Remaining
+            </span>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div style="margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem;">
+            <span>Depreciated: ${percentDepreciated}%</span>
+            <span>Elapsed: ${d.yearsElapsed} yrs / ${d.usefulLifeYears} yrs</span>
+          </div>
+          <div style="height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; display: flex;">
+            <div style="width: ${percentDepreciated}%; background: linear-gradient(90deg, #f87171, #fbbf24);"></div>
+            <div style="width: ${percentRemaining}%; background: #34d399;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Metrics Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Procurement Cost</div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.2rem;">${costFmt}</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Useful Life</div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #a5b4fc; margin-top: 0.2rem;">${d.usefulLifeYears} Years</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Annual Depreciation</div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #f87171; margin-top: 0.2rem;">${annualFmt}</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Accumulated Depr.</div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #fbbf24; margin-top: 0.2rem;">${accumFmt}</div>
+        </div>
+      </div>
+
+      <!-- Schedule Table -->
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.65rem; color: var(--text-main);">📅 Straight-Line Depreciation Schedule</h4>
+      <div class="table-container" style="max-height: 280px; overflow-y: auto; margin-bottom: 0;">
+        <table class="cams-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Date</th>
+              <th>Depreciation Expense</th>
+              <th>Accumulated Depr.</th>
+              <th>Ending Book Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${scheduleRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (err) {
+    content.innerHTML = `
+      <div class="notice-box notice-danger">
+        <span>⛔</span>
+        <span>Network error calculating depreciation: ${escapeHtml(err.message)}</span>
+      </div>
+    `;
+  }
 }

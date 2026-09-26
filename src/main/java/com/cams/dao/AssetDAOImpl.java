@@ -257,4 +257,18 @@ public class AssetDAOImpl implements AssetDAO {
         asset.setUpdatedAt(rs.getTimestamp("UPDATED_AT"));
         return asset;
     }
+
+    @Override
+    public List<Asset> findAllActiveForDepreciation() throws SQLException {
+        String sql = "SELECT " + SELECT_COLUMNS + " FROM ASSETS WHERE STATUS != 'DISPOSED' ORDER BY ASSET_ID";
+        List<Asset> list = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRowToAsset(rs));
+            }
+        }
+        return list;
+    }
 }

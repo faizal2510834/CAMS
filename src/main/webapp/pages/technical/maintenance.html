@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Maintenance & Repair Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div class="container" style="max-width: 1200px;">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="navAvatarLetter" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">T</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="navUserDisplayName">Loading user...</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="navUsername">@user</span>
+            &bull;
+            <span id="navUserDept">Department</span>
+            &bull;
+            <span class="role-badge" id="navRoleBadge">Technical Staff</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <a href="dashboard.html" id="dashNav" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Dashboard</a>
+        <a href="../assets.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Assets</a>
+        <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Issue & Return</a>
+        <span id="adminLinks" style="display: none; gap: 0.5rem;">
+          <a href="../admin/vendors.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Vendors</a>
+          <a href="../admin/purchases.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Purchases</a>
+          <a href="../admin/master-data.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Master Data</a>
+        </span>
+        <button id="logoutBtn" class="btn btn-danger" style="font-size: 0.82rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Header & Action Row -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.3);">
+          <span class="badge-dot" style="background: #f59e0b; box-shadow: 0 0 10px #f59e0b;"></span>
+          Module 6: Maintenance Management
+        </div>
+        <h1 class="title" style="font-size: 2.2rem; margin-bottom: 0.25rem;">
+          🛠️ Equipment Maintenance & Repair Management
+        </h1>
+        <p class="subtitle" style="margin: 0;">
+          Service damaged hardware returns, manage preventative maintenance schedules, assign technicians, and track repair costs.
+        </p>
+      </div>
+      <div>
+        <button id="openScheduleModalBtn" class="btn" style="width: auto; padding: 0.75rem 1.4rem; background: linear-gradient(135deg, #d97706, #ef4444); font-weight: 700;">
+          ➕ Schedule Maintenance
+        </button>
+      </div>
+    </div>
+
+    <!-- Metric / Stats Summary Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1.5rem;">
+      <div class="stat-card">
+        <div class="stat-desc">Filtered Work Orders</div>
+        <div class="stat-number" id="statTotalItems" style="color: #60a5fa;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Total Recorded Maintenance Cost</div>
+        <div class="stat-number" id="statTotalCost" style="color: #34d399;">₹0.00</div>
+      </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="filter-card">
+      <div class="filter-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="filterStatus">Status</label>
+          <select id="filterStatus" class="form-input">
+            <option value="ALL">All Statuses</option>
+            <option value="SCHEDULED">SCHEDULED</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="REQUIRES_FURTHER_REPAIR">REQUIRES_FURTHER_REPAIR</option>
+            <option value="COMPLETED">COMPLETED</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="filterAsset">Asset ID / Name</label>
+          <input type="text" id="filterAsset" class="form-input" placeholder="e.g. AST-CSE-001">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="filterTech">Technician</label>
+          <input type="text" id="filterTech" class="form-input" placeholder="e.g. Alex Rivera">
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <button id="filterBtn" class="btn" style="width: 100%; padding: 0.65rem 1rem;">Filter</button>
+          <button id="resetBtn" class="btn btn-secondary" style="width: auto; padding: 0.65rem 1rem;">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+      <table class="cams-table">
+        <thead>
+          <tr>
+            <th style="width: 12%;">Ticket ID</th>
+            <th style="width: 18%;">Asset Information</th>
+            <th style="width: 20%;">Fault / Scope</th>
+            <th style="width: 10%;">Scheduled</th>
+            <th style="width: 10%;">Completed</th>
+            <th style="width: 11%;">Technician</th>
+            <th style="width: 10%;">Cost</th>
+            <th style="width: 11%;">Status</th>
+            <th style="text-align: right; width: 14%;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="maintenanceTableBody">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-dim);">Loading maintenance tickets...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-bar">
+      <span id="pageInfo" style="font-size: 0.85rem; color: var(--text-dim);">Page 1 of 1</span>
+      <div style="display: flex; gap: 0.5rem;">
+        <button id="prevPageBtn" class="page-btn" disabled>&larr; Previous</button>
+        <button id="nextPageBtn" class="page-btn" disabled>Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Schedule Maintenance -->
+  <div id="scheduleModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Schedule Maintenance Ticket</h3>
+        <button class="close-btn" onclick="closeScheduleModal()">&times;</button>
+      </div>
+      <form id="scheduleForm" onsubmit="handleScheduleSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="maintAssetId">Asset ID <span style="color:#ef4444;">*</span></label>
+            <input type="text" id="maintAssetId" class="form-input" placeholder="e.g. AST-CSE-001" required>
+            <small style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.25rem; display: block;">Asset must be AVAILABLE or UNDER_MAINTENANCE without an active ticket.</small>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="maintScheduledDate">Scheduled Date <span style="color:#ef4444;">*</span></label>
+            <input type="date" id="maintScheduledDate" class="form-input" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="maintFaultDesc">Fault Description / Maintenance Scope <span style="color:#ef4444;">*</span></label>
+            <textarea id="maintFaultDesc" class="form-input" rows="3" placeholder="Describe the fault reported or scope of preventative servicing..." required maxlength="500"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="maintTech">Assigned Technician</label>
+            <input type="text" id="maintTech" class="form-input" placeholder="e.g. Alex Rivera">
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="maintCost">Initial Estimated Cost (₹)</label>
+            <input type="number" id="maintCost" class="form-input" min="0" step="0.01" value="0.00">
+          </div>
+          <div id="scheduleErrorMsg" class="notice-box notice-danger" style="display: none; margin-top: 0.75rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+          <button type="submit" class="btn" style="width: auto; padding: 0.6rem 1.4rem; background: linear-gradient(135deg, #d97706, #ef4444); font-weight: 700;">Confirm &amp; Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Update / Complete Maintenance -->
+  <div id="updateModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="updateModalTitle" class="modal-title">🔧 Update Maintenance Ticket</h3>
+        <button class="close-btn" onclick="closeUpdateModal()">&times;</button>
+      </div>
+      <form id="updateForm" onsubmit="handleUpdateSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="updateMaintId">
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="updateStatus">New Status <span style="color:#ef4444;">*</span></label>
+            <select id="updateStatus" class="form-input" required onchange="onUpdateStatusChange()">
+              <option value="IN_PROGRESS">IN_PROGRESS (Currently Servicing)</option>
+              <option value="COMPLETED">COMPLETED (Repaired &amp; Return to AVAILABLE)</option>
+              <option value="REQUIRES_FURTHER_REPAIR">REQUIRES_FURTHER_REPAIR (Awaiting Parts/Specialist)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="updateTech">Assigned Technician <span style="color:#ef4444;">*</span></label>
+            <input type="text" id="updateTech" class="form-input" placeholder="e.g. Alex Rivera" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="updateCost">Parts / Labor Repair Cost (₹) <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="updateCost" class="form-input" min="0" step="0.01" value="0.00" required>
+          </div>
+          <div id="completedDateGroup" class="form-group" style="margin-bottom: 1.1rem; display: none;">
+            <label class="form-label" for="updateCompletedDate">Completion Date</label>
+            <input type="date" id="updateCompletedDate" class="form-input">
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label class="form-label" for="updateRemarks">Technician Resolution Notes / Scope</label>
+            <textarea id="updateRemarks" class="form-input" rows="3" placeholder="Describe the diagnostic outcome, replaced parts, or resolution steps..."></textarea>
+          </div>
+          <div id="updateErrorMsg" class="notice-box notice-danger" style="display: none; margin-top: 0.75rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeUpdateModal()">Cancel</button>
+          <button type="submit" id="updateSubmitBtn" class="btn btn-primary" style="padding: 0.6rem 1.4rem;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden backward-compatibility elements -->
+  <span id="sessionUser" style="display: none;"></span>
+
+  <script src="../../js/maintenance.js"></script>
+</body>
+</html>

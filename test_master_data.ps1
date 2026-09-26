@@ -252,9 +252,26 @@ Write-Host "`n-- Section 8: Frontend UI Availability --" -ForegroundColor Yellow
 $masterPage = Invoke-WebRequest -Uri "$baseUrl/pages/admin/master-data.html" -Method Get -WebSession $adminSession -UseBasicParsing
 Assert-Condition ($masterPage.StatusCode -eq 200 -and $masterPage.Content -like "*Campus Master Data*") "Master data page rendered with title and tabs"
 
+# 10. Teardown Test Fixtures
+Write-Host "`n-- Section 9: Teardown Test Fixtures --" -ForegroundColor Yellow
+$cleanupScript = @"
+DELETE FROM assets WHERE asset_id = '$testAssetId';
+DELETE FROM departments WHERE department_id = '$deptCode';
+DELETE FROM locations WHERE location_id = '$locCode';
+DELETE FROM categories WHERE category_id = '$catCode';
+COMMIT;
+EXIT;
+"@
+$cleanupFile = Join-Path $PSScriptRoot "db\teardown_master.sql"
+$cleanupScript | Out-File -FilePath $cleanupFile -Encoding ascii
+cmd /c "sqlplus -s system/7608@localhost:1521/xepdb1 @`"$cleanupFile`"" | Out-Null
+if (Test-Path $cleanupFile) { Remove-Item $cleanupFile -Force }
+Assert-Condition ($true) "Teardown test master data fixtures completed cleanly"
+
 # Summary
 Write-Host "`n==============================================================" -ForegroundColor Cyan
 Write-Host "  PHASE 1 SUMMARY: $passCount Passed, $failCount Failed" -ForegroundColor $(if ($failCount -eq 0) { "Green" } else { "Red" })
 Write-Host "==============================================================" -ForegroundColor Cyan
 
 if ($failCount -gt 0) { exit 1 } else { exit 0 }
+

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - User Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      background: var(--bg-card);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      margin-bottom: 1.25rem;
+    }
+    .filter-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      outline: none;
+      transition: var(--transition);
+    }
+    .filter-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .role-admin { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .role-faculty { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .role-tech { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-inactive { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .action-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.35rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .action-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .action-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .action-btn.btn-warning:hover:not(:disabled) {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+    .action-btn.btn-danger:hover:not(:disabled) {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+    .action-btn.btn-success:hover:not(:disabled) {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    /* Modal Backdrop and Box */
+    .cams-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    .cams-modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      max-width: 500px;
+      width: 100%;
+      overflow: hidden;
+      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 1.5rem;
+    }
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    .form-group {
+      margin-bottom: 1.15rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 1250px;">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="navAvatarLetter">A</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="navUserDisplayName">Administrator</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="navUsername">@admin</span>
+            &bull;
+            <span id="navUserDept">IT Infrastructure</span>
+            &bull;
+            <span class="role-badge admin" id="navRoleBadge">Administrator</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+        <a href="dashboard.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Dashboard</a>
+        <a href="../assets.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Assets</a>
+        <a href="vendors.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Vendors</a>
+        <a href="purchases.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Purchases</a>
+        <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Issues</a>
+        <a href="../technical/maintenance.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Maintenance</a>
+        <a href="master-data.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Master Data</a>
+        <a href="../technical/audit.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Audits</a>
+        <a href="users.html" class="btn" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 1rem; background: var(--accent);">👥 Users</a>
+        <button id="logoutBtn" class="btn btn-danger" style="font-size: 0.82rem; padding: 0.6rem 0.95rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Header & Action Row -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div class="badge">
+          <span class="badge-dot"></span>
+          Module 9: User Management &amp; Security Administration
+        </div>
+        <h1 class="title" style="font-size: 2.2rem; margin-bottom: 0.25rem;">System User Accounts</h1>
+        <p class="subtitle" style="margin: 0;">
+          Create, configure, and maintain Administrator, Faculty, and Technical Staff logins, role assignments, and password resets.
+        </p>
+      </div>
+      <div>
+        <button id="createUserBtn" class="btn" style="width: auto; padding: 0.75rem 1.4rem; background: linear-gradient(135deg, #6366f1, #06b6d4);">
+          ➕ Create New User
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-container">
+      <div class="stat-card">
+        <div class="stat-desc">Total Accounts</div>
+        <div class="stat-number" id="statTotalUsers">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Active Accounts</div>
+        <div class="stat-number" style="color: var(--success);" id="statActiveUsers">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Faculty Members</div>
+        <div class="stat-number" style="color: var(--accent-cyan);" id="statFacultyUsers">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-desc">Technical Staff</div>
+        <div class="stat-number" style="color: var(--warning);" id="statTechUsers">-</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div style="flex: 1; min-width: 220px;">
+        <input type="text" id="searchInput" class="filter-input" style="width: 100%;" placeholder="🔍 Search by name or username...">
+      </div>
+      <div>
+        <select id="roleFilter" class="filter-input">
+          <option value="ALL">All Roles</option>
+          <option value="Administrator">Administrator</option>
+          <option value="Faculty">Faculty</option>
+          <option value="Technical Staff">Technical Staff</option>
+        </select>
+      </div>
+      <div>
+        <select id="deptFilter" class="filter-input">
+          <option value="ALL">All Departments</option>
+        </select>
+      </div>
+      <div>
+        <select id="statusFilter" class="filter-input">
+          <option value="ALL">All Statuses</option>
+          <option value="Y" selected>Active Only</option>
+          <option value="N">Deactivated Only</option>
+        </select>
+      </div>
+      <button id="refreshBtn" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.6rem 0.9rem;">
+        🔄 Refresh
+      </button>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+      <table class="cams-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">ID</th>
+            <th>Full Name</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th style="text-align: right; width: 250px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              Loading system user accounts...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Create User Modal -->
+  <div id="createUserModal" class="cams-modal-overlay">
+    <div class="cams-modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff;">Create New User Account</h3>
+        <button type="button" class="closeModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;">&times;</button>
+      </div>
+      <form id="createUserForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="createName" class="filter-input" style="width: 100%;" required placeholder="e.g. Prof. Alan Turing">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username * (Unique, lowercase alphanumeric)</label>
+            <input type="text" id="createUsername" class="filter-input" style="width: 100%;" required placeholder="e.g. aturing">
+          </div>
+          <div class="form-group">
+            <label class="form-label">System Role *</label>
+            <select id="createRole" class="filter-input" style="width: 100%;" required>
+              <option value="">Select Role...</option>
+              <option value="Administrator">Administrator</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Technical Staff">Technical Staff</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <select id="createDepartment" class="filter-input" style="width: 100%;" required>
+              <option value="">Select Department...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Password * (Minimum 6 characters)</label>
+            <input type="password" id="createPassword" class="filter-input" style="width: 100%;" required placeholder="••••••••" minlength="6">
+          </div>
+          <div id="createError" style="color: var(--danger); font-size: 0.8rem; display: none; margin-top: 0.5rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn" style="font-size: 0.85rem;">Cancel</button>
+          <button type="submit" class="btn" style="font-size: 0.85rem; width: auto; background: var(--accent);">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Edit User Modal -->
+  <div id="editUserModal" class="cams-modal-overlay">
+    <div class="cams-modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff;">Edit User Profile</h3>
+        <button type="button" class="closeModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;">&times;</button>
+      </div>
+      <form id="editUserForm">
+        <input type="hidden" id="editUserId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Username (Immutable)</label>
+            <input type="text" id="editUsername" class="filter-input" style="width: 100%; opacity: 0.6;" disabled>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="editName" class="filter-input" style="width: 100%;" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">System Role *</label>
+            <select id="editRole" class="filter-input" style="width: 100%;" required>
+              <option value="Administrator">Administrator</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Technical Staff">Technical Staff</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <select id="editDepartment" class="filter-input" style="width: 100%;" required>
+              <option value="">Select Department...</option>
+            </select>
+          </div>
+          <div id="editError" style="color: var(--danger); font-size: 0.8rem; display: none; margin-top: 0.5rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn" style="font-size: 0.85rem;">Cancel</button>
+          <button type="submit" class="btn" style="font-size: 0.85rem; width: auto; background: var(--accent);">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Reset Password Modal -->
+  <div id="resetPasswordModal" class="cams-modal-overlay">
+    <div class="cams-modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff;">🔑 Reset User Password</h3>
+        <button type="button" class="closeModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;">&times;</button>
+      </div>
+      <form id="resetPasswordForm">
+        <input type="hidden" id="resetUserId">
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Resetting password for: <strong id="resetTargetUser" style="color: var(--text-main);"></strong>
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Custom Temporary Password (Optional)</label>
+            <input type="text" id="resetCustomPassword" class="filter-input" style="width: 100%;" placeholder="Leave blank to auto-generate secure password" minlength="6">
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem;">
+              If left blank, a secure temporary credential will be created automatically.
+            </p>
+          </div>
+
+          <!-- Result Area -->
+          <div id="resetResultCard" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem;">
+            <div style="font-size: 0.78rem; color: #34d399; font-weight: 600; margin-bottom: 0.35rem;">
+              TEMPORARY PASSWORD GENERATED
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <code id="generatedPasswordDisplay" style="font-family: var(--font-mono); font-size: 1.15rem; color: #fff; font-weight: 700; background: rgba(0,0,0,0.4); padding: 0.35rem 0.75rem; border-radius: 4px; flex: 1;"></code>
+              <button type="button" id="copyPasswordBtn" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.75rem;">📋 Copy</button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--warning); margin-top: 0.65rem; line-height: 1.4;">
+              ⚠️ <strong>Security Notice:</strong> The user will be required to change this password on their next successful login. Provide this temporary credential securely to the user.
+            </p>
+          </div>
+
+          <div id="resetError" style="color: var(--danger); font-size: 0.8rem; display: none; margin-top: 0.5rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary closeModalBtn" style="font-size: 0.85rem;">Close</button>
+          <button type="submit" id="submitResetBtn" class="btn" style="font-size: 0.85rem; width: auto; background: var(--warning); color: #000; font-weight: 700;">
+            Execute Password Reset
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../js/users.js"></script>
+</body>
+</html>

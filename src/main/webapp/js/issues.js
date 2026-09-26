@@ -31,6 +31,19 @@ async function checkSession() {
       userBadge.textContent = currentUser.name + ' (' + currentUser.role + ')';
     }
 
+    if (document.getElementById('navUserDisplayName')) document.getElementById('navUserDisplayName').textContent = currentUser.name;
+    if (document.getElementById('navUsername')) document.getElementById('navUsername').textContent = '@' + currentUser.username;
+    if (document.getElementById('navUserDept')) document.getElementById('navUserDept').textContent = currentUser.department;
+    if (document.getElementById('navAvatarLetter')) document.getElementById('navAvatarLetter').textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+
+    const roleBadge = document.getElementById('navRoleBadge');
+    if (roleBadge) {
+      roleBadge.textContent = currentUser.role;
+      if (currentUser.role === 'Administrator') roleBadge.className = 'role-badge admin';
+      else if (currentUser.role === 'Faculty') roleBadge.className = 'role-badge faculty';
+      else if (currentUser.role === 'Technical Staff') roleBadge.className = 'role-badge technical';
+    }
+
     const dashNav = document.getElementById('dashNav');
     if (dashNav) {
       if (currentUser.role === 'Administrator') dashNav.href = 'admin/dashboard.html';
@@ -39,15 +52,38 @@ async function checkSession() {
     }
 
     // Role adaptations
+    const moduleBadgeText = document.getElementById('moduleBadgeText');
     if (currentUser.role === 'Administrator') {
-      document.getElementById('adminLinks').style.display = 'inline-flex';
-      document.getElementById('adminUserField').style.display = 'block';
+      if (document.getElementById('adminLinks')) document.getElementById('adminLinks').style.display = 'inline-flex';
+      if (document.getElementById('adminUserField')) document.getElementById('adminUserField').style.display = 'block';
+      if (moduleBadgeText) moduleBadgeText.textContent = 'Module 5: Issue & Return';
+    } else if (currentUser.role === 'Faculty') {
+      const pageTitle = document.getElementById('pageTitle');
+      if (pageTitle) {
+        pageTitle.innerHTML = '📋 My Borrowed Equipment';
+      }
+      const headerSubtitle = document.getElementById('headerSubtitle');
+      if (headerSubtitle) {
+        headerSubtitle.textContent = 'Equipment currently checked out to you, with due dates and return status.';
+      }
+      if (moduleBadgeText) moduleBadgeText.textContent = 'Module 5: Equipment Loans';
+      document.title = 'CAMS - My Borrowed Equipment';
     } else if (currentUser.role === 'Technical Staff') {
+      const techLinks = document.getElementById('techLinks');
+      if (techLinks) techLinks.style.display = 'inline-flex';
       // Technical Staff has read-only access
       const issueBtn = document.getElementById('openIssueModalBtn');
       if (issueBtn) issueBtn.style.display = 'none';
-      document.getElementById('headerSubtitle').textContent =
-        'Audit active equipment issuances and review maintenance context for returned items.';
+      const pageTitle = document.getElementById('pageTitle');
+      if (pageTitle) {
+        pageTitle.innerHTML = '🔄 Equipment Circulations Audit';
+      }
+      const headerSubtitle = document.getElementById('headerSubtitle');
+      if (headerSubtitle) {
+        headerSubtitle.textContent = 'Audit active equipment issuances and review maintenance context for returned items.';
+      }
+      if (moduleBadgeText) moduleBadgeText.textContent = 'Module 5: Issue & Return Audit';
+      document.title = 'CAMS - Equipment Circulations Audit';
     }
   } catch (err) {
     window.location.href = 'login.html';
@@ -244,8 +280,8 @@ function renderTable(items) {
           </span>
         </td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 4px; cursor: pointer; margin-right: 0.35rem;" onclick="viewIssue('${escapeHtml(issue.issueId)}')">View</button>
-          ${canReturn ? `<button class="btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px; cursor: pointer;" onclick="openReturnModal('${escapeHtml(issue.issueId)}', '${escapeHtml(issue.assetId)}')">Return</button>` : ''}
+          <button class="action-btn" onclick="viewIssue('${escapeHtml(issue.issueId)}')">👁️ View</button>
+          ${canReturn ? `<button class="action-btn primary" style="margin-left: 0.35rem;" onclick="openReturnModal('${escapeHtml(issue.issueId)}', '${escapeHtml(issue.assetId)}')">↩️ Return</button>` : ''}
         </td>
       </tr>
     `;

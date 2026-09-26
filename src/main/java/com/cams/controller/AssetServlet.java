@@ -1,6 +1,7 @@
 package com.cams.controller;
 
 import com.cams.model.Asset;
+import com.cams.model.AssetDepreciation;
 import com.cams.model.AssetQueryCriteria;
 import com.cams.model.PagedResult;
 import com.cams.service.AssetConflictException;
@@ -8,6 +9,8 @@ import com.cams.service.AssetNotFoundException;
 import com.cams.service.AssetService;
 import com.cams.service.AssetServiceImpl;
 import com.cams.service.AssetValidationException;
+import com.cams.service.DepreciationService;
+import com.cams.service.DepreciationServiceImpl;
 import com.cams.util.JsonUtil;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -42,13 +45,19 @@ public class AssetServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(AssetServlet.class.getName());
 
     private final AssetService assetService;
+    private final DepreciationService depreciationService;
 
     public AssetServlet() {
-        this(new AssetServiceImpl());
+        this(new AssetServiceImpl(), new DepreciationServiceImpl());
     }
 
     public AssetServlet(AssetService assetService) {
+        this(assetService, new DepreciationServiceImpl());
+    }
+
+    public AssetServlet(AssetService assetService, DepreciationService depreciationService) {
         this.assetService = assetService;
+        this.depreciationService = depreciationService;
     }
 
     @Override
@@ -60,6 +69,15 @@ public class AssetServlet extends HttpServlet {
         try {
             if ("/options".equalsIgnoreCase(pathInfo)) {
                 JsonUtil.sendSuccess(response, "Asset dropdown options retrieved", assetService.getOptions());
+                return;
+            }
+
+            if (pathInfo != null && pathInfo.endsWith("/depreciation")) {
+                // GET /api/assets/{id}/depreciation
+                String raw = pathInfo.substring(1, pathInfo.lastIndexOf("/depreciation"));
+                String assetId = raw.startsWith("/") ? raw.substring(1) : raw;
+                AssetDepreciation dep = depreciationService.getAssetDepreciation(assetId);
+                JsonUtil.sendSuccess(response, "Asset depreciation details retrieved successfully", dep);
                 return;
             }
 

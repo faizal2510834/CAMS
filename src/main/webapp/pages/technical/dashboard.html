@@ -27,9 +27,11 @@
         </div>
       </div>
       <div style="display: flex; gap: 0.75rem;">
-        <a href="../assets.html" class="btn" style="font-size: 0.82rem; text-decoration: none; width: auto; padding: 0.6rem 1.1rem; background: linear-gradient(135deg, #d97706, #ef4444);">📦 View Assets</a>
+        <a href="maintenance.html" class="btn" style="font-size: 0.82rem; text-decoration: none; width: auto; padding: 0.6rem 1.1rem; background: linear-gradient(135deg, #d97706, #ef4444); font-weight: 700;">🛠️ Maintenance Queue</a>
+        <a href="audit.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📋 Inventory Audit</a>
+        <a href="../assets.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; width: auto; padding: 0.6rem 1rem;">📦 Assets</a>
         <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 1rem;">🔄 Issue Audit</a>
-        <a href="../../index.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Health Check</a>
+        <a href="../../index.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none;">Health</a>
         <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem;">Sign Out</button>
       </div>
     </nav>
@@ -46,28 +48,93 @@
       </p>
     </div>
 
-    <!-- Stub Stat Cards -->
-    <div class="stats-grid">
+    <!-- Live Technical KPI Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
       <div class="stat-card">
-        <div class="stat-desc">Open Work Orders</div>
-        <div class="stat-number" style="color: #f59e0b;">5</div>
+        <div class="stat-desc">Active Repair Queue</div>
+        <div class="stat-number" id="statTechQueue" style="color: #f59e0b;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Urgent Repairs</div>
-        <div class="stat-number" style="color: #ef4444;">1</div>
+        <div class="stat-desc">Completed Repairs</div>
+        <div class="stat-number" id="statTechCompleted" style="color: #34d399;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Scheduled Inspections</div>
-        <div class="stat-number" style="color: #34d399;">8</div>
+        <div class="stat-desc">Total Maintenance Cost</div>
+        <div class="stat-number" id="statTechCost" style="color: #38bdf8; font-size: 1.6rem;">₹ 0.00</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Inactive Session Timeout</div>
-        <div class="stat-number" style="font-size: 1.5rem; color: #6ee7b7;">20 min</div>
+        <div class="stat-desc">Physical Audits (Verified)</div>
+        <div class="stat-number" id="statTechAudit" style="color: #a78bfa;">-</div>
+      </div>
+    </div>
+
+    <!-- Live Maintenance Queue & Audits Tables Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 1.75rem;">
+      <!-- Recent Maintenance Tickets -->
+      <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #fde68a; margin: 0;">🛠️ Recent Maintenance Tickets</h3>
+          <a href="maintenance.html" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; text-decoration: none;">View All &rarr;</a>
+        </div>
+        <div class="table-container" style="margin-bottom: 0; max-height: 250px; overflow-y: auto;">
+          <table class="cams-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Asset</th>
+                <th>Status</th>
+                <th>Scheduled</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody id="recentMaintTableBody">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">Loading maintenance tickets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Physical Audits -->
+      <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(16, 185, 129, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #6ee7b7; margin: 0;">📋 Recent Physical Audits</h3>
+          <a href="audit.html" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; text-decoration: none;">Audit Log &rarr;</a>
+        </div>
+        <div class="table-container" style="margin-bottom: 0; max-height: 250px; overflow-y: auto;">
+          <table class="cams-table">
+            <thead>
+              <tr>
+                <th>Audit ID</th>
+                <th>Asset</th>
+                <th>Status</th>
+                <th>Verified By</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="recentAuditsTableBody">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">Loading inventory audits...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- Quick Access Cards Grid -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+      <!-- Maintenance Management Card -->
+      <div class="card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08)); border: 1px solid rgba(245, 158, 11, 0.4);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+          <span style="font-size: 1.3rem;">🛠️</span>
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: #fde68a;">Active Maintenance & Repair Queue</h3>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Process damaged equipment tickets, assign repair technicians, log parts/labor costs, and return repaired assets to service.
+        </p>
+        <a href="maintenance.html" class="btn" style="text-decoration: none; width: auto; padding: 0.55rem 1rem; background: linear-gradient(135deg, #d97706, #ef4444); font-weight: 700; font-size: 0.82rem;">
+          Open Maintenance Workspace &rarr;
+        </a>
+      </div>
+
       <!-- Asset Registry Quick Access Card -->
       <div class="card" style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.08), rgba(239, 68, 68, 0.05)); border: 1px solid rgba(245, 158, 11, 0.3);">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
@@ -77,7 +144,7 @@
         <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
           Inspect deep technical specifications, check operational health, and verify warranty expiry dates across all campus inventory.
         </p>
-        <a href="../assets.html" class="btn" style="text-decoration: none; width: auto; padding: 0.55rem 1rem; background: linear-gradient(135deg, #d97706, #ef4444); font-weight: 600; font-size: 0.82rem;">
+        <a href="../assets.html" class="btn btn-secondary" style="text-decoration: none; width: auto; padding: 0.55rem 1rem; font-weight: 600; font-size: 0.82rem;">
           Browse & Inspect Assets &rarr;
         </a>
       </div>
@@ -91,7 +158,7 @@
         <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
           Review active loans and returned hardware conditions. Damaged returns automatically feed into your repair queues.
         </p>
-        <a href="../issues.html" class="btn" style="text-decoration: none; width: auto; padding: 0.55rem 1rem; background: linear-gradient(135deg, #10b981, #059669); font-weight: 600; font-size: 0.82rem;">
+        <a href="../issues.html" class="btn btn-secondary" style="text-decoration: none; width: auto; padding: 0.55rem 1rem; font-weight: 600; font-size: 0.82rem;">
           Audit Issue Transactions &rarr;
         </a>
       </div>
@@ -205,6 +272,81 @@
       }
     }
 
+    async function loadTechnicalDashboardData() {
+      try {
+        const res = await fetch('../../api/dashboard/technical');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const d = json.data;
+        const formatInr = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
+
+        // Maintenance KPIs
+        if (d.maintenance) {
+          document.getElementById('statTechQueue').textContent = d.maintenance.activeQueue ?? 0;
+          document.getElementById('statTechCompleted').textContent = d.maintenance.completed ?? 0;
+          document.getElementById('statTechCost').textContent = formatInr(d.maintenance.totalCost);
+        }
+
+        // Audit KPIs
+        if (d.audit) {
+          document.getElementById('statTechAudit').textContent = `${d.audit.verified ?? 0} (Missing: ${d.audit.missing ?? 0})`;
+        }
+
+        // Recent Maintenance Tickets Table
+        const maintBody = document.getElementById('recentMaintTableBody');
+        const maintList = d.recentMaintenance || [];
+        if (maintList.length === 0) {
+          maintBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">No maintenance records found.</td></tr>';
+        } else {
+          maintBody.innerHTML = maintList.map(item => {
+            let statusBadge = '<span class="status-pill warning">' + item.status + '</span>';
+            if (item.status === 'COMPLETED') statusBadge = '<span class="status-pill success">COMPLETED</span>';
+            else if (item.status === 'IN_PROGRESS') statusBadge = '<span class="status-pill info">IN PROGRESS</span>';
+
+            return `
+              <tr>
+                <td style="font-family: var(--font-mono); font-size: 0.8rem; color: #a5b4fc;">${item.maintenanceId}</td>
+                <td><strong style="color: #ffffff;">${item.assetName}</strong><br><small style="color: var(--text-muted); font-family: var(--font-mono);">${item.assetId}</small></td>
+                <td>${statusBadge}</td>
+                <td style="font-size: 0.82rem; color: var(--text-muted);">${item.scheduledDate || '-'}</td>
+                <td style="font-weight: 600; color: #34d399;">${formatInr(item.cost)}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Recent Physical Audits Table
+        const auditBody = document.getElementById('recentAuditsTableBody');
+        const auditList = d.recentAudits || [];
+        if (auditList.length === 0) {
+          auditBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">No audit records found.</td></tr>';
+        } else {
+          auditBody.innerHTML = auditList.map(item => {
+            let statusClass = 'success';
+            if (item.status === 'MISSING') statusClass = 'error';
+            else if (item.status === 'MISLOCATED') statusClass = 'warning';
+
+            const formattedDate = item.auditDate ? new Date(item.auditDate).toLocaleDateString() : '-';
+
+            return `
+              <tr>
+                <td style="font-family: var(--font-mono); font-size: 0.8rem; color: #a5b4fc;">${item.auditId}</td>
+                <td><strong style="color: #ffffff;">${item.assetName}</strong><br><small style="color: var(--text-muted); font-family: var(--font-mono);">${item.assetId}</small></td>
+                <td><span class="status-pill ${statusClass}">${item.status}</span></td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">@${item.verifiedBy}</td>
+                <td style="font-size: 0.82rem; color: var(--text-muted);">${formattedDate}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } catch (err) {
+        console.error('Failed to load technical dashboard data', err);
+      }
+    }
+
     async function logout() {
       try {
         await fetch('../../api/auth/logout', { method: 'POST' });
@@ -213,6 +355,7 @@
     }
 
     loadSession();
+    loadTechnicalDashboardData();
   </script>
 </body>
 </html>

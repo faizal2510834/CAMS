@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMS - Reports & Institutional Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .report-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .report-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .report-section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .report-filter-bar {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 1rem;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .filter-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .filter-group select,
+    .filter-group input {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.55rem 0.85rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus {
+      border-color: var(--primary);
+    }
+    .table-container {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      margin-bottom: 0;
+    }
+    table.cams-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.86rem;
+    }
+    table.cams-table th {
+      background: rgba(31, 41, 55, 0.7);
+      padding: 0.8rem 1rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border-color);
+    }
+    table.cams-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+    table.cams-table tr:hover {
+      background: rgba(99, 102, 241, 0.04);
+    }
+
+    /* Print View Styling (SRS FR13) */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10pt;
+      }
+      .dashboard-nav,
+      .report-filter-bar,
+      .no-print,
+      .btn {
+        display: none !important;
+      }
+      .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .report-section {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        box-shadow: none !important;
+        padding: 1rem !important;
+        margin-bottom: 1.5rem !important;
+        page-break-inside: avoid;
+      }
+      .report-section-title {
+        color: #111827 !important;
+      }
+      .stat-card {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        color: #111827 !important;
+      }
+      .stat-number {
+        color: #111827 !important;
+      }
+      .stat-desc {
+        color: #4b5563 !important;
+      }
+      table.cams-table th {
+        background: #f3f4f6 !important;
+        color: #111827 !important;
+        border-bottom: 2px solid #9ca3af !important;
+      }
+      table.cams-table td {
+        border-bottom: 1px solid #e5e7eb !important;
+        color: #111827 !important;
+      }
+      .print-header {
+        display: block !important;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #111827;
+        padding-bottom: 0.5rem;
+      }
+    }
+    .print-header {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Navigation -->
+    <nav class="dashboard-nav">
+      <div class="nav-user">
+        <div class="user-avatar" id="avatarLetter">A</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;" id="userDisplayName">System Administrator</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="userUsername">@admin</span>
+            &bull;
+            <span id="userDept">IT Infrastructure</span>
+            &bull;
+            <span class="role-badge admin">Administrator</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+        <a href="dashboard.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">Dashboard</a>
+        <a href="../assets.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📦 Assets</a>
+        <a href="vendors.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🏢 Vendors</a>
+        <a href="purchases.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📜 Purchases</a>
+        <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🔄 Issues</a>
+        <a href="../technical/maintenance.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">🛠️ Maintenance</a>
+        <a href="master-data.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">⚙️ Master Data</a>
+        <a href="../technical/audit.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">📋 Audits</a>
+        <a href="users.html" class="btn btn-secondary" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 0.95rem;">👥 Users</a>
+        <a href="reports.html" class="btn" style="font-size: 0.82rem; text-decoration: none; padding: 0.6rem 1rem; background: linear-gradient(135deg, #06b6d4, #2563eb);">📊 Reports</a>
+        <button class="btn btn-danger" onclick="logout()" style="font-size: 0.82rem; padding: 0.6rem 0.95rem;">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Print Only Header -->
+    <div class="print-header">
+      <h1 style="font-size: 1.6rem; margin: 0 0 0.25rem 0;">CAMS — Comprehensive Institutional Asset Report</h1>
+      <p style="margin: 0; font-size: 0.85rem; color: #4b5563;">
+        Generated on <span id="printDate"></span> &bull; Campus Asset Management System &bull; Confidential
+      </p>
+    </div>
+
+    <!-- Header Banner -->
+    <div class="header no-print" style="text-align: left; margin-bottom: 1.75rem;">
+      <div class="badge" style="background: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.3);">
+        <span class="badge-dot" style="background: #06b6d4; box-shadow: 0 0 10px #06b6d4;"></span>
+        Role: Administrator &bull; Central Campus Intelligence & Audit Center
+      </div>
+      <h1 class="title" style="font-size: 2rem;">Institutional Analytics & Reports</h1>
+      <p class="subtitle" style="margin: 0; max-width: 850px;">
+        Comprehensive institutional reporting across asset lifecycles, straight-line depreciation valuation, physical inventory audits, and departmental distribution.
+      </p>
+    </div>
+
+    <!-- Filter & Action Bar -->
+    <div class="report-filter-bar no-print">
+      <div class="filter-group">
+        <label for="filterDept">Department</label>
+        <select id="filterDept">
+          <option value="">All Campus Departments</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterStartDate">Date Range (From)</label>
+        <input type="date" id="filterStartDate">
+      </div>
+      <div class="filter-group">
+        <label for="filterEndDate">Date Range (To)</label>
+        <input type="date" id="filterEndDate">
+      </div>
+      <button class="btn" onclick="applyReportFilters()" style="padding: 0.6rem 1.1rem; font-size: 0.85rem; background: linear-gradient(135deg, #06b6d4, #2563eb);">
+        <span>Apply Filters</span>
+      </button>
+      <button class="btn btn-secondary" onclick="resetReportFilters()" style="padding: 0.6rem 1rem; font-size: 0.85rem;">
+        <span>Reset</span>
+      </button>
+      <div style="margin-left: auto; display: flex; gap: 0.65rem;">
+        <button class="btn btn-secondary" onclick="exportReportCsv()" style="padding: 0.6rem 1rem; font-size: 0.85rem;">
+          <span>📥 Export CSV</span>
+        </button>
+        <button class="btn" onclick="window.print()" style="padding: 0.6rem 1.1rem; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #059669);">
+          <span>🖨️ Print / Save PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 1: Asset Lifecycle & Operational Status -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>📦</span> 1. Asset Lifecycle & Operational Status
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0;">REAL-TIME ASSET REGISTRY</span>
+      </div>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 0;">
+        <div class="stat-card">
+          <div class="stat-desc">Total Registered Assets</div>
+          <div class="stat-number" id="rptTotalAssets">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Available in Stock</div>
+          <div class="stat-number" id="rptAvailableAssets" style="color: #34d399;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Currently Issued</div>
+          <div class="stat-number" id="rptIssuedAssets" style="color: #60a5fa;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Under Maintenance</div>
+          <div class="stat-number" id="rptMaintAssets" style="color: #fbbf24;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Disposed / Written-Off</div>
+          <div class="stat-number" id="rptDisposedAssets" style="color: #ef4444;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Campus Valuation & Depreciation -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>📉</span> 2. Campus Valuation & Category Depreciation Summary
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0; background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.3);">MODULE 7 REUSE</span>
+      </div>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.25rem;">
+        <div class="stat-card">
+          <div class="stat-desc">Original Procurement Cost</div>
+          <div class="stat-number" id="rptValOriginal" style="font-size: 1.5rem;">₹ 0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Current Net Book Value</div>
+          <div class="stat-number" id="rptValCurrent" style="font-size: 1.5rem; color: #34d399;">₹ 0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Accumulated Depreciation</div>
+          <div class="stat-number" id="rptValDepr" style="font-size: 1.5rem; color: #fbbf24;">₹ 0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Active Valued Assets</div>
+          <div class="stat-number" id="rptValCount" style="font-size: 1.5rem; color: #a5b4fc;">0</div>
+        </div>
+      </div>
+
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">
+        Valuation Breakdown by Category
+      </div>
+      <div class="table-container">
+        <table class="cams-table">
+          <thead>
+            <tr>
+              <th>Asset Category</th>
+              <th>Asset Count</th>
+              <th>Original Cost</th>
+              <th>Current Book Value</th>
+              <th>Depreciated Loss</th>
+            </tr>
+          </thead>
+          <tbody id="rptCategoryValBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">Loading category schedule...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 3: Procurement & Acquisition History -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>📜</span> 3. Procurement & Purchase Orders Summary
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0; background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3);">MODULE 4 ORDERS</span>
+      </div>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 0;">
+        <div class="stat-card">
+          <div class="stat-desc">Total Orders Logged</div>
+          <div class="stat-number" id="rptTotalPurchases">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Approved Orders</div>
+          <div class="stat-number" id="rptApprovedPurchases" style="color: #34d399;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Pending Approvals</div>
+          <div class="stat-number" id="rptPendingPurchases" style="color: #fbbf24;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Rejected Orders</div>
+          <div class="stat-number" id="rptRejectedPurchases" style="color: #ef4444;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Total Procurement Spend</div>
+          <div class="stat-number" id="rptTotalSpend" style="color: #38bdf8; font-size: 1.5rem;">₹ 0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Equipment Circulation & Overdue Loans -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>🔄</span> 4. Equipment Circulation & Overdue Loans
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0; background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3);">MODULE 5 CIRCULATION</span>
+      </div>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 0;">
+        <div class="stat-card">
+          <div class="stat-desc">Total Checkout Transactions</div>
+          <div class="stat-number" id="rptTotalIssues">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Active Loans</div>
+          <div class="stat-number" id="rptActiveLoans" style="color: #60a5fa;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Overdue Returns</div>
+          <div class="stat-number" id="rptOverdueLoans" style="color: #ef4444;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Returned in Good Health</div>
+          <div class="stat-number" id="rptGoodReturns" style="color: #34d399;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Damaged Returns</div>
+          <div class="stat-number" id="rptDamagedReturns" style="color: #f59e0b;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Maintenance & Hardware Servicing -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>🛠️</span> 5. Maintenance & Hardware Servicing Operations
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);">MODULE 6 SERVICING</span>
+      </div>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 0;">
+        <div class="stat-card">
+          <div class="stat-desc">Total Service Tickets</div>
+          <div class="stat-number" id="rptTotalMaintTickets">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Open Repair Queue</div>
+          <div class="stat-number" id="rptOpenMaintQueue" style="color: #f59e0b;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Successfully Completed</div>
+          <div class="stat-number" id="rptCompletedMaint" style="color: #34d399;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Total Maintenance Cost</div>
+          <div class="stat-number" id="rptTotalMaintCost" style="color: #38bdf8; font-size: 1.5rem;">₹ 0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6: Physical Inventory Audit Findings -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>📋</span> 6. Physical Inventory Audit Findings
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0; background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">MODULE 8 AUDITS</span>
+      </div>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 0;">
+        <div class="stat-card">
+          <div class="stat-desc">Total Items Scanned</div>
+          <div class="stat-number" id="rptTotalAudits">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Verified in Place</div>
+          <div class="stat-number" id="rptVerifiedAudits" style="color: #34d399;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Missing Items</div>
+          <div class="stat-number" id="rptMissingAudits" style="color: #ef4444;">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-desc">Mislocated Items</div>
+          <div class="stat-number" id="rptMislocatedAudits" style="color: #f59e0b;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 7: Departmental Asset Allocation & Valuation Breakdown -->
+    <div class="report-section">
+      <div class="report-section-header">
+        <div class="report-section-title">
+          <span>🏢</span> 7. Departmental Allocation & Valuation Breakdown
+        </div>
+        <span class="badge" style="font-size: 0.72rem; margin: 0;">CAMPUS-WIDE ALLOCATION</span>
+      </div>
+      <div class="table-container">
+        <table class="cams-table">
+          <thead>
+            <tr>
+              <th>Department Name</th>
+              <th>Total Assets</th>
+              <th>Total Valuation</th>
+              <th>Available</th>
+              <th>Issued</th>
+              <th>Maintenance</th>
+              <th>Disposed</th>
+            </tr>
+          </thead>
+          <tbody id="rptDeptBreakdownBody">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">Loading departmental breakdown...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/reports.js"></script>
+</body>
+</html>

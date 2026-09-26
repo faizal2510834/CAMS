@@ -7,6 +7,7 @@ import com.cams.model.PagedResult;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -69,4 +70,9 @@ public interface AssetDAO {
      * Executes a dynamic, parameterized search with pagination and whitelisted sorting.
      */
     PagedResult<Asset> search(AssetQueryCriteria criteria) throws SQLException;
+
+    /**
+     * Retrieves all non-disposed active assets for campus-wide depreciation calculation.
+     */
+    List<Asset> findAllActiveForDepreciation() throws SQLException;
 }

@@ -46,42 +46,61 @@
       </p>
     </div>
 
-    <!-- Stub Stat Cards -->
-    <div class="stats-grid">
+    <!-- Live Faculty KPI Cards -->
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
       <div class="stat-card">
-        <div class="stat-desc">Department Assets</div>
-        <div class="stat-number" style="color: #67e8f9;">24</div>
+        <div class="stat-desc">Currently Issued to Me</div>
+        <div class="stat-number" id="statFacultyIssued" style="color: #67e8f9;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Active Requisitions</div>
-        <div class="stat-number" style="color: #a78bfa;">2</div>
+        <div class="stat-desc">Overdue Returns</div>
+        <div class="stat-number" id="statFacultyOverdue" style="color: #ef4444;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Assigned Lab</div>
-        <div class="stat-number" style="font-size: 1.4rem; color: #f9fafb;">CS-301</div>
+        <div class="stat-desc">Total Lifetime Loans</div>
+        <div class="stat-number" id="statFacultyTotalLoans" style="color: #a78bfa;">-</div>
       </div>
       <div class="stat-card">
-        <div class="stat-desc">Inactive Session Timeout</div>
-        <div class="stat-number" style="font-size: 1.5rem; color: #6ee7b7;">20 min</div>
+        <div class="stat-desc">Session Security</div>
+        <div class="stat-number" style="font-size: 1.4rem; color: #6ee7b7;">Active (20m)</div>
       </div>
     </div>
 
-    <!-- Self-Service Equipment Loan Card -->
-    <div style="margin-bottom: 1.5rem;">
-      <div class="card" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(59, 130, 246, 0.05)); border: 1px solid rgba(6, 182, 212, 0.25);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-          <div>
-            <span style="font-size: 1.3rem;">🔄</span>
-            <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">Academic Equipment Loans (Issue & Return)</h3>
+    <!-- Active Equipment Loans Section -->
+    <div class="card" style="margin-bottom: 1.75rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(6, 182, 212, 0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.3rem;">📋</span>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0;">My Active Equipment Loans</h3>
           </div>
-          <span class="badge" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; margin: 0; background: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.3);">SELF SERVICE</span>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Equipment currently in your custody. Items past their expected return date are flagged in red.
+          </div>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Issue available campus instruments for teaching and lab research, and complete returns with operational condition assessments.
-        </p>
-        <a href="../issues.html" class="btn" style="text-decoration: none; width: auto; font-size: 0.82rem; padding: 0.55rem 1.1rem; background: linear-gradient(135deg, #0891b2, #2563eb);">
-          Open Equipment Loans Hub &rarr;
+        <a href="../issues.html" class="btn" style="text-decoration: none; width: auto; font-size: 0.82rem; padding: 0.5rem 1rem; background: linear-gradient(135deg, #0891b2, #2563eb);">
+          Open Issue & Return Hub &rarr;
         </a>
+      </div>
+
+      <div class="table-container" style="margin-bottom: 0;">
+        <table class="cams-table">
+          <thead>
+            <tr>
+              <th>Asset ID</th>
+              <th>Asset Name</th>
+              <th>Category</th>
+              <th>Location</th>
+              <th>Issued On</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="myLoansTableBody">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">Loading your active loans...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -193,6 +212,63 @@
       }
     }
 
+    async function loadFacultyDashboardData() {
+      try {
+        const res = await fetch('../../api/dashboard/faculty');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json.success || !json.data) return;
+
+        const d = json.data;
+        document.getElementById('statFacultyIssued').textContent = d.currentlyIssuedCount ?? 0;
+        const overdueEl = document.getElementById('statFacultyOverdue');
+        overdueEl.textContent = d.overdueLoansCount ?? 0;
+        if ((d.overdueLoansCount ?? 0) > 0) {
+          overdueEl.style.textShadow = '0 0 12px rgba(239, 68, 68, 0.6)';
+        }
+        document.getElementById('statFacultyTotalLoans').textContent = d.totalLoans ?? 0;
+
+        const tbody = document.getElementById('myLoansTableBody');
+        const loans = d.activeLoans || [];
+        if (loans.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                No equipment is currently issued to your account. Visit <a href="../issues.html" style="color: #67e8f9; text-decoration: underline;">Issue & Return</a> to request assets.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = loans.map(item => {
+          const isOverdue = item.isOverdue;
+          const statusBadge = isOverdue
+            ? '<span class="status-pill error" style="font-weight: 700;">OVERDUE</span>'
+            : '<span class="status-pill success">ACTIVE</span>';
+          
+          return `
+            <tr style="${isOverdue ? 'background: rgba(239, 68, 68, 0.08);' : ''}">
+              <td style="font-family: var(--font-mono); font-weight: 600; color: #a5b4fc;">${item.assetId}</td>
+              <td style="font-weight: 600; color: #ffffff;">${item.assetName}</td>
+              <td>${item.category || '-'}</td>
+              <td>${item.location || '-'}</td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">${item.issueDate || '-'}</td>
+              <td style="font-size: 0.85rem; font-weight: 600; color: ${isOverdue ? '#ef4444' : 'var(--text-main)'};">${item.expectedReturnDate || '-'}</td>
+              <td>${statusBadge}</td>
+              <td>
+                <a href="../issues.html" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; text-decoration: none;">
+                  Return Asset
+                </a>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to load faculty dashboard data', err);
+      }
+    }
+
     async function logout() {
       try {
         await fetch('../../api/auth/logout', { method: 'POST' });
@@ -201,6 +277,7 @@
     }
 
     loadSession();
+    loadFacultyDashboardData();
   </script>
 </body>
 </html>

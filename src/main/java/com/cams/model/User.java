@@ -18,6 +18,8 @@ public class User implements Serializable {
     private String username;
     private transient String password; // Password hash; marked transient to avoid JSON serialization
     private Timestamp createdAt;
+    private String active = "Y"; // 'Y' or 'N'
+    private String mustChangePassword = "N"; // 'Y' or 'N'
 
     public User() {
     }
@@ -28,6 +30,8 @@ public class User implements Serializable {
         this.role = role;
         this.department = department;
         this.username = username;
+        this.active = "Y";
+        this.mustChangePassword = "N";
     }
 
     public User(Long userId, String name, String role, String department, String username, String password, Timestamp createdAt) {
@@ -38,6 +42,20 @@ public class User implements Serializable {
         this.username = username;
         this.password = password;
         this.createdAt = createdAt;
+        this.active = "Y";
+        this.mustChangePassword = "N";
+    }
+
+    public User(Long userId, String name, String role, String department, String username, String password, Timestamp createdAt, String active, String mustChangePassword) {
+        this.userId = userId;
+        this.name = name;
+        this.role = role;
+        this.department = department;
+        this.username = username;
+        this.password = password;
+        this.createdAt = createdAt;
+        this.active = active != null ? active : "Y";
+        this.mustChangePassword = mustChangePassword != null ? mustChangePassword : "N";
     }
 
     public Long getUserId() {
@@ -96,12 +114,38 @@ public class User implements Serializable {
         this.createdAt = createdAt;
     }
 
+    public String getActive() {
+        return active;
+    }
+
+    public void setActive(String active) {
+        this.active = active;
+    }
+
+    public boolean isActive() {
+        return "Y".equalsIgnoreCase(this.active);
+    }
+
+    public String getMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(String mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
+    }
+
+    public boolean isMustChangePassword() {
+        return "Y".equalsIgnoreCase(this.mustChangePassword);
+    }
+
     /**
      * Returns a copy of the user with the password hash stripped for safe client transmission.
      */
     public User toSafeUser() {
         User safe = new User(this.userId, this.name, this.role, this.department, this.username);
         safe.setCreatedAt(this.createdAt);
+        safe.setActive(this.active);
+        safe.setMustChangePassword(this.mustChangePassword);
         return safe;
     }
 
@@ -113,6 +157,8 @@ public class User implements Serializable {
                 ", role='" + role + '\'' +
                 ", department='" + department + '\'' +
                 ", username='" + username + '\'' +
+                ", active='" + active + '\'' +
+                ", mustChangePassword='" + mustChangePassword + '\'' +
                 ", createdAt=" + createdAt +
                 '}';
     }

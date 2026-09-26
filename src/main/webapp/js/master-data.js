@@ -19,9 +19,19 @@ async function checkSession() {
       window.location.href = '../login.html';
       return;
     }
+    const user = data.data;
     const userBadge = document.getElementById('sessionUser');
     if (userBadge) {
-      userBadge.textContent = data.data.username + ' (' + data.data.role + ')';
+      userBadge.textContent = user.username + ' (' + user.role + ')';
+    }
+    if (document.getElementById('navUserDisplayName')) document.getElementById('navUserDisplayName').textContent = user.name || 'Administrator';
+    if (document.getElementById('navUsername')) document.getElementById('navUsername').textContent = '@' + user.username;
+    if (document.getElementById('navUserDept')) document.getElementById('navUserDept').textContent = user.department || 'IT Infrastructure';
+    if (document.getElementById('navAvatarLetter')) document.getElementById('navAvatarLetter').textContent = (user.name || user.username || 'A').charAt(0).toUpperCase();
+    if (document.getElementById('navRoleBadge')) {
+      const b = document.getElementById('navRoleBadge');
+      b.textContent = user.role;
+      b.className = 'role-badge ' + (user.role === 'Administrator' ? 'admin' : (user.role === 'Faculty' ? 'faculty' : 'technical'));
     }
   } catch (err) {
     window.location.href = '../login.html';
@@ -104,16 +114,16 @@ function renderTable(items) {
 
     return `
       <tr>
-        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">${escapeHtml(id)}</td>
-        <td>${escapeHtml(name)}</td>
+        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #a5b4fc;">${escapeHtml(id)}</td>
+        <td style="font-weight: 500;">${escapeHtml(name)}</td>
         <td>
           <span class="badge ${active ? 'badge-active' : 'badge-inactive'}">
             ${active ? 'ACTIVE' : 'INACTIVE'}
           </span>
         </td>
-        <td style="text-align: right;">
-          <button class="btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 4px; cursor: pointer; margin-right: 0.4rem;" onclick="openEditModal('${escapeHtml(id)}', '${escapeHtml(name)}', '${item.active}')">Edit</button>
-          ${active ? `<button class="btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; cursor: pointer;" onclick="deactivateItem('${escapeHtml(id)}')">Deactivate</button>` : ''}
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="action-btn" onclick="openEditModal('${escapeHtml(id)}', '${escapeHtml(name)}', '${item.active}')">✏️ Edit</button>
+          ${active ? `<button class="action-btn danger" style="margin-left: 0.35rem;" onclick="deactivateItem('${escapeHtml(id)}')">🚫 Deactivate</button>` : ''}
         </td>
       </tr>
     `;
